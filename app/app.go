@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +25,7 @@ func StartApp() {
 	router.GET("/items/:itemID", controllers.GetItem)
 
 	// Inicie el servidor en el puerto 8000
-	err := handler.Run(":" + os.Getenv("PORT"))
+	err := http.ListenAndServe(":"+os.Getenv("PORT"), handler)
 	if err != nil {
 		fmt.Println("Error running app", err)
 	}
