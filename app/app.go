@@ -2,17 +2,30 @@ package app
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"go-api/controllers"
 	"os"
+
+	"github.com/gin-gonic/gin"
+	"github.com/rs/cors"
+
+	"go-api/controllers"
 )
 
 func StartApp() {
+	// Crea una instancia del enrutador de Gin
 	router := gin.Default()
+
+	// Crea un middleware CORS con opciones predeterminadas
+	c := cors.Default()
+
+	// Envolvemos el enrutador en el middleware CORS
+	handler := c.Handler(router)
+
+	// Agrega tus rutas de API al enrutador aquí
 	router.GET("/items/:itemID", controllers.GetItem)
-	err := router.Run(":" + os.Getenv("PORT"))
+
+	// Inicie el servidor en el puerto 8000
+	err := handler.Run(":" + os.Getenv("PORT"))
 	if err != nil {
 		fmt.Println("Error running app", err)
 	}
-
 }
