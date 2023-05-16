@@ -1,8 +1,11 @@
 package main
 
-import "go-api/app"
+import (
+	"mvc-go/app"
+	"mvc-go/db"
+)
 
 func main() {
-	app.StartApp()
-
+	db.StartDbEngine()
+	app.StartRoute()
 }
