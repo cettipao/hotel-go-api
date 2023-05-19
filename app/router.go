@@ -19,6 +19,6 @@ func StartRoute() {
 	mapUrls()
 
 	log.Info("Starting server")
-	router.Run(":8080")
+	router.Run(":8000")
 
 }

@@ -1,9 +1,14 @@
 package db
 
 import (
+	hotelClient "mvc-go/clients/hotel"
+	reservationClient "mvc-go/clients/reservation"
+	userClient "mvc-go/clients/user"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	log "github.com/sirupsen/logrus"
+	"mvc-go/model"
 )
 
 var (
@@ -13,8 +18,8 @@ var (
 
 func init() {
 	// DB Connections Paramters
-	DBName := "uccarqsoft"
-	DBUser := "root"
+	DBName := "hotel"
+	DBUser := "cetti"
 	DBPass := "123456"
 	//DBPass := os.Getenv("MVC_DB_PASS")
 	DBHost := "localhost"
@@ -30,24 +35,18 @@ func init() {
 	}
 
 	// We need to add all CLients that we build
-	/*
-		userClient.Db = db
-		addressClient.Db = db
-		telephoneClient.Db = db
-		alumnoClient.Db = db
-		materiaClient.Db = db
-		tutorClient.Db = db*/
+
+	userClient.Db = db
+	hotelClient.Db = db
+	reservationClient.Db = db
+
 }
 
 func StartDbEngine() {
 	// We need to migrate all classes model.
-	/*
-		db.AutoMigrate(&model.User{})
-		db.AutoMigrate(&model.Address{})
-		db.AutoMigrate(&model.Telephone{})
-		db.AutoMigrate(&model.Alumno{})
-		db.AutoMigrate(&model.Materia{})
-		db.AutoMigrate(&model.Tutor{})*/
+	db.AutoMigrate(&model.User{})
+	db.AutoMigrate(&model.Hotel{})
+	db.AutoMigrate(&model.Reservation{})
 
 	log.Info("Finishing Migration Database Tables")
 }

@@ -2,6 +2,9 @@ package app
 
 import (
 	log "github.com/sirupsen/logrus"
+	hotelController "mvc-go/controllers/hotel"
+	reservationController "mvc-go/controllers/reservation"
+	userController "mvc-go/controllers/user"
 )
 
 func mapUrls() {
@@ -9,20 +12,14 @@ func mapUrls() {
 	// Users Mapping
 	router.GET("/user/:id", userController.GetUserById)
 	router.GET("/user", userController.GetUsers)
-	router.GET("/hotel/:id", userController.GetUserById)
-	router.GET("/hotel", userController.GetUsers)
-	router.GET("/rooms-available", userController.GetUsers)
-	/*
-		router.GET("/user/:id", userController.GetUserById)
-		router.GET("/user", userController.GetUsers)
-		router.POST("/user", userController.UserInsert)
-		router.POST("/user/:id/telephone", userController.AddUserTelephone)
-
-		// Alumnos Mapping
-		router.GET("/alumno/:id", alumnoController.GetAlumnoById)
-		router.GET("/alumno", alumnoController.GetAlumnos)
-		router.POST("/alumno", alumnoController.AlumnoInsert)
-		router.POST("/alumno/:id/materia", alumnoController.AddAlumnoMateria)*/
+	router.POST("/user", userController.UserInsert)
+	router.GET("/hotel/:id", hotelController.GetHotelById)
+	router.GET("/hotel", hotelController.GetHotels)
+	router.POST("/hotel", hotelController.HotelInsert)
+	router.GET("/reservation/:id", reservationController.GetReservationById)
+	router.GET("/reservation", reservationController.GetReservations)
+	router.POST("/reservation", reservationController.InsertReservation)
+	//router.GET("/rooms-available", hotelController.GetUsers)
 
 	log.Info("Finishing mappings configurations")
 }

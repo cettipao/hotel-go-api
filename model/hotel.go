@@ -5,6 +5,8 @@ type Hotel struct {
 	Name           string `gorm:"type:varchar(50);not null"`
 	RoomsAvailable int
 	Description    string `gorm:"type:varchar(250);not null"`
+
+	//Reservations Reservations `gorm:"foreignKey:UserId"`
 }
 
 type Hotels []Hotel

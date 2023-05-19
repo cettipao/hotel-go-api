@@ -8,6 +8,8 @@ type User struct {
 	Email    string `gorm:"type:varchar(150);not null;"`
 	Password string `gorm:"type:varchar(30);not null"`
 	Admin    int
+
+	Reservations Reservations `gorm:"foreignKey:UserId"`
 }
 
 type Users []User
