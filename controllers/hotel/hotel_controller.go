@@ -1,7 +1,8 @@
 package userController
 
 import (
-	"mvc-go/dto"
+	"mvc-go/controllers"
+	"mvc-go/dto/hotels_dto"
 	service "mvc-go/services"
 	"net/http"
 	"strconv"
@@ -14,7 +15,7 @@ func GetHotelById(c *gin.Context) {
 	log.Debug("Hotel id to load: " + c.Param("id"))
 
 	id, _ := strconv.Atoi(c.Param("id"))
-	var hotelDto dto.HotelDetailDto
+	var hotelDto hotels_dto.HotelDetailDto
 
 	hotelDto, err := service.HotelService.GetHotelById(id)
 
@@ -26,7 +27,7 @@ func GetHotelById(c *gin.Context) {
 }
 
 func GetHotels(c *gin.Context) {
-	var hotelsDto dto.HotelsDto
+	var hotelsDto hotels_dto.HotelsDto
 	hotelsDto, err := service.HotelService.GetHotels()
 
 	if err != nil {
@@ -38,7 +39,21 @@ func GetHotels(c *gin.Context) {
 }
 
 func HotelInsert(c *gin.Context) {
-	var hotelDto dto.HotelDto
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	// Obtener el ID del usuario del contexto
+	userID := c.GetInt("user_id")
+	//Verificar si es admin
+	if !controllers.IsAdmin(userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
+		return
+	}
+
+	var hotelDto hotels_dto.HotelDto
 	err := c.BindJSON(&hotelDto)
 
 	// Error Parsing json param

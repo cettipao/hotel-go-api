@@ -1,14 +1,13 @@
-package dto
+package hotels_dto
 
-type HotelDetailDto struct {
+type HotelDto struct {
 	Name           string `json:"name"`
 	RoomsAvailable int    `json:"rooms_available"`
 	Description    string `json:"description"`
-
-	ReservationsDto ReservationsDto `json:"reservas,omitempty"`
+	Id             int    `json:"id"`
 }
 
-type HotelsDetailDto []HotelDetailDto
+type HotelsDto []HotelDto
 
 /*
 package model

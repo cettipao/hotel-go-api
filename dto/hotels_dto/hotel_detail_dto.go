@@ -1,13 +1,18 @@
-package dto
+package hotels_dto
 
-type HotelDto struct {
+import (
+	"mvc-go/dto/reservations_dto"
+)
+
+type HotelDetailDto struct {
 	Name           string `json:"name"`
 	RoomsAvailable int    `json:"rooms_available"`
 	Description    string `json:"description"`
-	Id             int    `json:"id"`
+
+	ReservationsDto reservations_dto.ReservationsDto `json:"reservas,omitempty"`
 }
 
-type HotelsDto []HotelDto
+type HotelsDetailDto []HotelDetailDto
 
 /*
 package model

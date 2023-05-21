@@ -2,7 +2,7 @@ package services
 
 import (
 	hotelCliente "mvc-go/clients/hotel"
-	"mvc-go/dto"
+	"mvc-go/dto/hotels_dto"
 	"mvc-go/model"
 	e "mvc-go/utils/errors"
 )
@@ -10,9 +10,9 @@ import (
 type hotelService struct{}
 
 type hotelServiceInterface interface {
-	GetHotelById(id int) (dto.HotelDetailDto, e.ApiError)
-	GetHotels() (dto.HotelsDto, e.ApiError)
-	InsertHotel(userDto dto.HotelDto) (dto.HotelDto, e.ApiError)
+	GetHotelById(id int) (hotels_dto.HotelDetailDto, e.ApiError)
+	GetHotels() (hotels_dto.HotelsDto, e.ApiError)
+	InsertHotel(userDto hotels_dto.HotelDto) (hotels_dto.HotelDto, e.ApiError)
 }
 
 var (
@@ -23,24 +23,24 @@ func init() {
 	HotelService = &hotelService{}
 }
 
-func (s *hotelService) GetHotelById(id int) (dto.HotelDetailDto, e.ApiError) {
+func (s *hotelService) GetHotelById(id int) (hotels_dto.HotelDetailDto, e.ApiError) {
 
 	var hotel model.Hotel = hotelCliente.GetHotelById(id)
-	var hotelDetailDto dto.HotelDetailDto
+	var hotelDetailDto hotels_dto.HotelDetailDto
 
 	if hotel.Id == 0 {
-		return hotelDetailDto, e.NewBadRequestApiError("hotel not found")
+		return hotelDetailDto, e.NewBadRequestApiError("hotels_dto not found")
 	}
 
 	hotelDetailDto.Name = hotel.Name
 	hotelDetailDto.Description = hotel.Description
 	hotelDetailDto.RoomsAvailable = hotel.RoomsAvailable
 	/*
-		for _, reservation := range user.Reservations {
+		for _, reservations_dto := range users_dto.Reservations {
 			var dtoReservation dto.ReservationDto
 
-			dtoReservation.Id = reservation.Id
-			dtoReservation.HotelName = reservation.Name
+			dtoReservation.Id = reservations_dto.Id
+			dtoReservation.HotelName = reservations_dto.Name
 
 			userDetailDto.ReservationsDto = append(userDetailDto.ReservationsDto, dtoReservation)
 		}*/
@@ -48,13 +48,13 @@ func (s *hotelService) GetHotelById(id int) (dto.HotelDetailDto, e.ApiError) {
 	return hotelDetailDto, nil
 }
 
-func (s *hotelService) GetHotels() (dto.HotelsDto, e.ApiError) {
+func (s *hotelService) GetHotels() (hotels_dto.HotelsDto, e.ApiError) {
 
 	var hotels model.Hotels = hotelCliente.GetHotels()
-	var hotelsDto dto.HotelsDto
+	var hotelsDto hotels_dto.HotelsDto
 
 	for _, hotel := range hotels {
-		var hotelDto dto.HotelDto
+		var hotelDto hotels_dto.HotelDto
 		hotelDto.Id = hotel.Id
 		hotelDto.Name = hotel.Name
 		hotelDto.Description = hotel.Description
@@ -66,7 +66,7 @@ func (s *hotelService) GetHotels() (dto.HotelsDto, e.ApiError) {
 	return hotelsDto, nil
 }
 
-func (s *hotelService) InsertHotel(hotelDto dto.HotelDto) (dto.HotelDto, e.ApiError) {
+func (s *hotelService) InsertHotel(hotelDto hotels_dto.HotelDto) (hotels_dto.HotelDto, e.ApiError) {
 
 	var hotel model.Hotel
 

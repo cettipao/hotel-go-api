@@ -1,4 +1,4 @@
-package dto
+package reservations_dto
 
 type ReservationDetailDto struct {
 	Id          int    `json:"reservation_id"`
@@ -14,4 +14,4 @@ type ReservationDetailDto struct {
 	HotelDescription string `json:"description"`
 }
 
-type ReservationsDetailDto []ReservationsDetailDto
+type ReservationsDetailDto []ReservationDetailDto

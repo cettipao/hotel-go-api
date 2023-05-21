@@ -11,7 +11,7 @@ var Db *gorm.DB
 func GetHotelById(id int) model.Hotel {
 	var hotel model.Hotel
 
-	//Db.Where("id = ?", id).Preload("Address").Preload("Telephones").First(&user)
+	//Db.Where("id = ?", id).Preload("Address").Preload("Telephones").First(&users_dto)
 	Db.Where("id = ?", id).First(&hotel)
 	log.Debug("Hotel: ", hotel)
 

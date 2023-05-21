@@ -1,7 +1,8 @@
 package reservationController
 
 import (
-	"mvc-go/dto"
+	"mvc-go/controllers"
+	"mvc-go/dto/reservations_dto"
 	service "mvc-go/services"
 	"net/http"
 	"strconv"
@@ -11,10 +12,24 @@ import (
 )
 
 func GetReservationById(c *gin.Context) {
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	// Obtener el ID del usuario del contexto
+	userID := c.GetInt("user_id")
+	//Verificar si es admin
+	if !controllers.IsAdmin(userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
+		return
+	}
+
 	log.Debug("Reservation id to load: " + c.Param("id"))
 
 	id, _ := strconv.Atoi(c.Param("id"))
-	var reservationDetailDto dto.ReservationDetailDto
+	var reservationDetailDto reservations_dto.ReservationDetailDto
 
 	reservationDetailDto, err := service.ReservationService.GetReservationById(id)
 
@@ -26,7 +41,21 @@ func GetReservationById(c *gin.Context) {
 }
 
 func GetReservations(c *gin.Context) {
-	var reservationsDetailDto dto.ReservationsDetailDto
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	// Obtener el ID del usuario del contexto
+	userID := c.GetInt("user_id")
+	//Verificar si es admin
+	if !controllers.IsAdmin(userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
+		return
+	}
+
+	var reservationsDetailDto reservations_dto.ReservationsDetailDto
 	reservationsDetailDto, err := service.ReservationService.GetReservations()
 
 	if err != nil {
@@ -38,7 +67,14 @@ func GetReservations(c *gin.Context) {
 }
 
 func InsertReservation(c *gin.Context) {
-	var reservationCreateDto dto.ReservationCreateDto
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+
+	var reservationCreateDto reservations_dto.ReservationCreateDto
 	err := c.BindJSON(&reservationCreateDto)
 
 	// Error Parsing json param
@@ -48,7 +84,7 @@ func InsertReservation(c *gin.Context) {
 		return
 	}
 
-	var reservationDetailDto dto.ReservationDetailDto
+	var reservationDetailDto reservations_dto.ReservationDetailDto
 	reservationDetailDto, er := service.ReservationService.InsertReservation(reservationCreateDto)
 	// Error del Insert
 	if er != nil {
@@ -59,8 +95,9 @@ func InsertReservation(c *gin.Context) {
 	c.JSON(http.StatusCreated, reservationDetailDto)
 }
 
+// NO NECESITO AUTH
 func RoomsAvailable(c *gin.Context) {
-	var reservationCreateDto dto.ReservationCreateDto
+	var reservationCreateDto reservations_dto.ReservationCreateDto
 	err := c.BindJSON(&reservationCreateDto)
 
 	// Error Parsing json param
@@ -70,7 +107,7 @@ func RoomsAvailable(c *gin.Context) {
 		return
 	}
 
-	var roomsAvailable dto.RoomsAvailable
+	var roomsAvailable reservations_dto.RoomsAvailable
 
 	roomsAvailable, er := service.ReservationService.RoomsAvailable(reservationCreateDto)
 

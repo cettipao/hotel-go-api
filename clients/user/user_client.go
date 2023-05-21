@@ -11,8 +11,17 @@ var Db *gorm.DB
 func GetUserById(id int) model.User {
 	var user model.User
 
-	//Db.Where("id = ?", id).Preload("Address").Preload("Telephones").First(&user)
+	//Db.Where("id = ?", id).Preload("Address").Preload("Telephones").First(&users_dto)
 	Db.Where("id = ?", id).First(&user)
+	log.Debug("User: ", user)
+
+	return user
+}
+
+func GetUserByEmail(email string) model.User {
+	var user model.User
+
+	Db.Where("email = ?", email).First(&user)
 	log.Debug("User: ", user)
 
 	return user

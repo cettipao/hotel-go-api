@@ -2,18 +2,19 @@ package services
 
 import (
 	userCliente "mvc-go/clients/user"
-
-	"mvc-go/dto"
+	"mvc-go/dto/users_dto"
 	"mvc-go/model"
+	"mvc-go/services/login"
 	e "mvc-go/utils/errors"
 )
 
 type userService struct{}
 
 type userServiceInterface interface {
-	GetUserById(id int) (dto.UserDetailDto, e.ApiError)
-	GetUsers() (dto.UsersDto, e.ApiError)
-	InsertUser(userDto dto.UserDtoRegister) (dto.UserDetailDto, e.ApiError)
+	GetUserById(id int) (users_dto.UserDetailDto, e.ApiError)
+	GetUsers() (users_dto.UsersDto, e.ApiError)
+	InsertUser(userDto users_dto.UserDtoRegister) (users_dto.UserDetailDto, e.ApiError)
+	UserLogin(userDto users_dto.UserLoginDto) (users_dto.UserLoginResponseDto, e.ApiError)
 }
 
 var (
@@ -24,25 +25,26 @@ func init() {
 	UserService = &userService{}
 }
 
-func (s *userService) GetUserById(id int) (dto.UserDetailDto, e.ApiError) {
+func (s *userService) GetUserById(id int) (users_dto.UserDetailDto, e.ApiError) {
 
 	var user model.User = userCliente.GetUserById(id)
-	var userDetailDto dto.UserDetailDto
+	var userDetailDto users_dto.UserDetailDto
 
 	if user.Id == 0 {
-		return userDetailDto, e.NewBadRequestApiError("user not found")
+		return userDetailDto, e.NewBadRequestApiError("users_dto not found")
 	}
 
 	userDetailDto.Name = user.Name
 	userDetailDto.LastName = user.LastName
 	userDetailDto.Dni = user.Dni
 	userDetailDto.Email = user.Email
+	userDetailDto.Admin = user.Admin
 	/*
-		for _, reservation := range user.Reservations {
+		for _, reservations_dto := range users_dto.Reservations {
 			var dtoReservation dto.ReservationDto
 
-			dtoReservation.Id = reservation.Id
-			dtoReservation.HotelName = reservation.Name
+			dtoReservation.Id = reservations_dto.Id
+			dtoReservation.HotelName = reservations_dto.Name
 
 			userDetailDto.ReservationsDto = append(userDetailDto.ReservationsDto, dtoReservation)
 		}*/
@@ -50,13 +52,13 @@ func (s *userService) GetUserById(id int) (dto.UserDetailDto, e.ApiError) {
 	return userDetailDto, nil
 }
 
-func (s *userService) GetUsers() (dto.UsersDto, e.ApiError) {
+func (s *userService) GetUsers() (users_dto.UsersDto, e.ApiError) {
 
 	var users model.Users = userCliente.GetUsers()
-	var usersDto dto.UsersDto
+	var usersDto users_dto.UsersDto
 
 	for _, user := range users {
-		var userDto dto.UserDto
+		var userDto users_dto.UserDto
 		userDto.Id = user.Id
 		userDto.Name = user.Name
 		userDto.LastName = user.LastName
@@ -69,7 +71,7 @@ func (s *userService) GetUsers() (dto.UsersDto, e.ApiError) {
 	return usersDto, nil
 }
 
-func (s *userService) InsertUser(userDto dto.UserDtoRegister) (dto.UserDetailDto, e.ApiError) {
+func (s *userService) InsertUser(userDto users_dto.UserDtoRegister) (users_dto.UserDetailDto, e.ApiError) {
 
 	var user model.User
 
@@ -77,16 +79,36 @@ func (s *userService) InsertUser(userDto dto.UserDtoRegister) (dto.UserDetailDto
 	user.LastName = userDto.LastName
 	user.Dni = userDto.Dni
 	user.Email = userDto.Email
-	user.Password = userDto.Password
+	hash, _ := login.HashPassword(userDto.Password)
+	user.Password = hash
 	user.Admin = 0
 
 	user = userCliente.InsertUser(user)
 
-	var userDetailDto dto.UserDetailDto
+	var userDetailDto users_dto.UserDetailDto
 	userDetailDto.Name = user.Name
 	userDetailDto.LastName = user.LastName
 	userDetailDto.Dni = user.Dni
 	userDetailDto.Email = user.Email
 
 	return userDetailDto, nil
+}
+
+func (s *userService) UserLogin(userDto users_dto.UserLoginDto) (users_dto.UserLoginResponseDto, e.ApiError) {
+	var loginResponse users_dto.UserLoginResponseDto
+	user := userCliente.GetUserByEmail(userDto.Email)
+	if user.Id == 0 {
+		return loginResponse, e.NewBadRequestApiError("User not found")
+	}
+	if !login.CheckPasswordHash(userDto.Password, user.Password) {
+		//Retornar Api error de contraseña incorrecta
+		return loginResponse, e.NewUnauthorizedApiError("Contraseña incorrecta")
+	}
+	token, err := login.GenerateToken(user.Id, user.Email)
+	if err != nil {
+		// Retornar Api error de error al generar el token
+		return loginResponse, e.NewInternalServerApiError("Error al generar el token", err)
+	}
+	loginResponse.Token = token
+	return loginResponse, nil
 }

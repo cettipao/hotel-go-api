@@ -1,4 +1,4 @@
-package dto
+package reservations_dto
 
 type ReservationDto struct {
 	Id          int    `json:"reservation_id"`

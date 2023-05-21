@@ -13,7 +13,7 @@ func GetReservationById(id int) model.Reservation {
 	var reservation model.Reservation
 
 	Db.Where("id = ?", id).Preload("Hotel").Preload("User").First(&reservation)
-	//Db.Where("id = ?", id).First(&user)
+	//Db.Where("id = ?", id).First(&users_dto)
 	log.Debug("Reservation: ", reservation)
 
 	return reservation

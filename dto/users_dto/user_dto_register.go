@@ -1,11 +1,9 @@
-package dto
+package users_dto
 
-type UserDto struct {
+type UserDtoRegister struct {
 	Name     string `json:"name"`
 	LastName string `json:"last_name"`
 	Email    string `json:"email"`
 	Dni      string `json:"dni"`
-	Id       int    `json:"id"`
+	Password string `json:"password"`
 }
-
-type UsersDto []UserDto
