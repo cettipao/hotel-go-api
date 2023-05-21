@@ -1,8 +1,8 @@
 package dto
 
 type ReservationCreateDto struct {
-	UserId  int `json:"user_id"`
-	HotelId int `json:"hotel_id"`
-	//Inicio
-	//Fin
+	UserId      int    `json:"user_id"`
+	HotelId     int    `json:"hotel_id"`
+	InitialDate string `json:"initial_date"`
+	FinalDate   string `json:"final_date"`
 }

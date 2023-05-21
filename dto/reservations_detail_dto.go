@@ -1,7 +1,9 @@
 package dto
 
 type ReservationDetailDto struct {
-	Id int `json:"reservation_id"`
+	Id          int    `json:"reservation_id"`
+	InitialDate string `json:"initial_date"`
+	FinalDate   string `json:"final_date"`
 
 	UserName     string `json:"user_name"`
 	UserLastName string `json:"user_last_name"`

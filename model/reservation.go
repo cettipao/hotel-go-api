@@ -1,9 +1,11 @@
 package model
 
+import "time"
+
 type Reservation struct {
-	Id int `gorm:"primaryKey"`
-	//Inicio
-	//Fin
+	Id          int       `gorm:"primaryKey"`
+	InitialDate time.Time `gorm:"column:initial_date;not null"`
+	FinalDate   time.Time `gorm:"column:final_date;not null"`
 
 	User   User `gorm:"foreignkey:UserId"`
 	UserId int
@@ -12,4 +14,4 @@ type Reservation struct {
 	HotelId int
 }
 
-type Reservations []User
+type Reservations []Reservation

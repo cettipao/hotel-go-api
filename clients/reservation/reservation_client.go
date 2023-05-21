@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"mvc-go/model"
+	"time"
 )
 
 var Db *gorm.DB
@@ -46,6 +47,15 @@ func GetReservationsByHotel(idHotel int) model.Reservations {
 	log.Debug("Reservations: ", reservations)
 
 	return reservations
+}
+
+func GetReservationsByHotelAndDates(idHotel int, initialDate time.Time, finalDate time.Time) int {
+	var count int
+	Db.Model(&model.Reservation{}).Where("hotel_id = ? AND ? < final_date AND ? >= initial_date", idHotel, initialDate, finalDate).Preload("Hotel").Preload("User").Count(&count)
+
+	log.Debug("Reservation Count: ", count)
+
+	return count
 }
 
 func InsertReservation(reservation model.Reservation) model.Reservation {

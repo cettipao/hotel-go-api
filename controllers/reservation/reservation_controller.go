@@ -58,3 +58,25 @@ func InsertReservation(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, reservationDetailDto)
 }
+
+func RoomsAvailable(c *gin.Context) {
+	var reservationCreateDto dto.ReservationCreateDto
+	err := c.BindJSON(&reservationCreateDto)
+
+	// Error Parsing json param
+	if err != nil {
+		log.Error(err.Error())
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	var roomsAvailable dto.RoomsAvailable
+
+	roomsAvailable, er := service.ReservationService.RoomsAvailable(reservationCreateDto)
+
+	if err != nil {
+		c.JSON(er.Status(), err)
+		return
+	}
+	c.JSON(http.StatusOK, roomsAvailable)
+}

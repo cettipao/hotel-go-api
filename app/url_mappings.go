@@ -19,7 +19,7 @@ func mapUrls() {
 	router.GET("/reservation/:id", reservationController.GetReservationById)
 	router.GET("/reservation", reservationController.GetReservations)
 	router.POST("/reservation", reservationController.InsertReservation)
-	//router.GET("/rooms-available", hotelController.GetUsers)
+	router.GET("/rooms-available", reservationController.RoomsAvailable)
 
 	log.Info("Finishing mappings configurations")
 }
