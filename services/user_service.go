@@ -1,7 +1,9 @@
 package services
 
 import (
+	log "github.com/sirupsen/logrus"
 	userCliente "mvc-go/clients/user"
+	reservations_dto "mvc-go/dto/reservations_dto"
 	"mvc-go/dto/users_dto"
 	"mvc-go/model"
 	"mvc-go/services/login"
@@ -39,15 +41,17 @@ func (s *userService) GetUserById(id int) (users_dto.UserDetailDto, e.ApiError) 
 	userDetailDto.Dni = user.Dni
 	userDetailDto.Email = user.Email
 	userDetailDto.Admin = user.Admin
-	/*
-		for _, reservations_dto := range users_dto.Reservations {
-			var dtoReservation dto.ReservationDto
 
-			dtoReservation.Id = reservations_dto.Id
-			dtoReservation.HotelName = reservations_dto.Name
+	log.Debug(len(user.Reservations))
 
-			userDetailDto.ReservationsDto = append(userDetailDto.ReservationsDto, dtoReservation)
-		}*/
+	for _, reservation := range user.Reservations {
+		var dtoReservation reservations_dto.ReservationDto
+
+		dtoReservation.Id = reservation.Id
+		dtoReservation.HotelName = reservation.Hotel.Name
+
+		userDetailDto.ReservationsDto = append(userDetailDto.ReservationsDto, dtoReservation)
+	}
 
 	return userDetailDto, nil
 }

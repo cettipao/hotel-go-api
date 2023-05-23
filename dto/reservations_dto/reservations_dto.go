@@ -7,4 +7,4 @@ type ReservationDto struct {
 	FinalDate   string `json:"final_date"`
 }
 
-type ReservationsDto []ReservationsDto
+type ReservationsDto []ReservationDto
