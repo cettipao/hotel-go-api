@@ -14,7 +14,7 @@ type reservationService struct{}
 type reservationServiceInterface interface {
 	GetReservationById(id int) (reservations_dto.ReservationDetailDto, e.ApiError)
 	GetReservations() (reservations_dto.ReservationsDetailDto, e.ApiError)
-	//GetReservationsByUser() (dto.ReservationsDto, e.ApiError)
+	GetReservationsByUser(id int) (reservations_dto.ReservationsDetailDto, e.ApiError)
 	//GetReservationsByHotel() (dto.ReservationsDto, e.ApiError)
 	InsertReservation(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.ReservationDetailDto, e.ApiError)
 	RoomsAvailable(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.RoomsAvailable, e.ApiError)
@@ -40,8 +40,8 @@ func (s *reservationService) GetReservationById(id int) (reservations_dto.Reserv
 
 	reservationDetailDto.Id = reservation.Id
 	reservationDetailDto.UserName = reservation.User.Name
-	reservationDetailDto.InitialDate = reservation.InitialDate.Format("02/01/2006")
-	reservationDetailDto.FinalDate = reservation.FinalDate.Format("02/01/2006")
+	reservationDetailDto.InitialDate = reservation.InitialDate.Format(layout)
+	reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
 	reservationDetailDto.UserLastName = reservation.User.LastName
 	reservationDetailDto.UserDni = reservation.User.Dni
 	reservationDetailDto.UserEmail = reservation.User.Email
@@ -74,6 +74,33 @@ func (s *reservationService) GetReservations() (reservations_dto.ReservationsDet
 		reservationDetailDto.UserEmail = reservation.User.Email
 		reservationDetailDto.HotelName = reservation.Hotel.Name
 		reservationDetailDto.HotelDescription = reservation.Hotel.Description
+		reservationDetailDto.InitialDate = reservation.InitialDate.Format(layout)
+		reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
+		reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
+
+		reservationsDetailDto = append(reservationsDetailDto, reservationDetailDto)
+	}
+
+	return reservationsDetailDto, nil
+}
+
+func (s *reservationService) GetReservationsByUser(id int) (reservations_dto.ReservationsDetailDto, e.ApiError) {
+
+	var reservations = reservationClient.GetReservationsByUser(id)
+	var reservationsDetailDto reservations_dto.ReservationsDetailDto
+
+	for _, reservation := range reservations {
+		var reservationDetailDto reservations_dto.ReservationDetailDto
+		reservationDetailDto.Id = reservation.Id
+		reservationDetailDto.UserName = reservation.User.Name
+		reservationDetailDto.UserLastName = reservation.User.LastName
+		reservationDetailDto.UserDni = reservation.User.Dni
+		reservationDetailDto.UserEmail = reservation.User.Email
+		reservationDetailDto.HotelName = reservation.Hotel.Name
+		reservationDetailDto.HotelDescription = reservation.Hotel.Description
+		reservationDetailDto.InitialDate = reservation.InitialDate.Format(layout)
+		reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
+		reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
 
 		reservationsDetailDto = append(reservationsDetailDto, reservationDetailDto)
 	}

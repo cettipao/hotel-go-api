@@ -32,7 +32,7 @@ func GetReservations() model.Reservations {
 func GetReservationsByUser(idUser int) model.Reservations {
 	var reservations model.Reservations
 	//Db.Preload("Address").Find(&users)
-	Db.Where("id_user = ?", idUser).Preload("Hotel").Preload("User").Find(&reservations)
+	Db.Where("user_id = ?", idUser).Preload("Hotel").Preload("User").Find(&reservations)
 
 	log.Debug("Reservations: ", reservations)
 

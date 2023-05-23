@@ -66,6 +66,27 @@ func GetReservations(c *gin.Context) {
 	c.JSON(http.StatusOK, reservationsDetailDto)
 }
 
+func GetReservationsByUser(c *gin.Context) {
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	// Obtener el ID del usuario del contexto
+	userID := c.GetInt("user_id")
+
+	var reservationsDetailDto reservations_dto.ReservationsDetailDto
+	reservationsDetailDto, err := service.ReservationService.GetReservationsByUser(userID)
+
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	c.JSON(http.StatusOK, reservationsDetailDto)
+}
+
 func InsertReservation(c *gin.Context) {
 	controllers.TokenVerification()(c)
 	// Verificar si ocurrió un error durante la verificación del token
@@ -76,13 +97,14 @@ func InsertReservation(c *gin.Context) {
 
 	var reservationCreateDto reservations_dto.ReservationCreateDto
 	err := c.BindJSON(&reservationCreateDto)
-
 	// Error Parsing json param
 	if err != nil {
 		log.Error(err.Error())
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
+	userID := c.GetInt("user_id")
+	reservationCreateDto.UserId = userID
 
 	var reservationDetailDto reservations_dto.ReservationDetailDto
 	reservationDetailDto, er := service.ReservationService.InsertReservation(reservationCreateDto)
@@ -97,22 +119,25 @@ func InsertReservation(c *gin.Context) {
 
 // NO NECESITO AUTH
 func RoomsAvailable(c *gin.Context) {
-	var reservationCreateDto reservations_dto.ReservationCreateDto
-	err := c.BindJSON(&reservationCreateDto)
+	// Obtener los parámetros de consulta
+	params := c.Request.URL.Query()
 
-	// Error Parsing json param
-	if err != nil {
-		log.Error(err.Error())
-		c.JSON(http.StatusBadRequest, err.Error())
-		return
-	}
+	// Obtener los valores de los parámetros
+	hotelID, _ := strconv.Atoi(params.Get("hotel_id"))
+	initialDate := params.Get("initial_date")
+	finalDate := params.Get("final_date")
+
+	var reservationCreateDto reservations_dto.ReservationCreateDto
+	reservationCreateDto.HotelId = hotelID
+	reservationCreateDto.InitialDate = initialDate
+	reservationCreateDto.FinalDate = finalDate
 
 	var roomsAvailable reservations_dto.RoomsAvailable
 
 	roomsAvailable, er := service.ReservationService.RoomsAvailable(reservationCreateDto)
 
-	if err != nil {
-		c.JSON(er.Status(), err)
+	if er != nil {
+		c.JSON(er.Status(), er)
 		return
 	}
 	c.JSON(http.StatusOK, roomsAvailable)
