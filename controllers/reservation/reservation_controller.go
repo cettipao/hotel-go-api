@@ -76,15 +76,15 @@ func GetReservationsByUser(c *gin.Context) {
 	// Obtener el ID del usuario del contexto
 	userID := c.GetInt("user_id")
 
-	var reservationsDetailDto reservations_dto.ReservationsDetailDto
-	reservationsDetailDto, err := service.ReservationService.GetReservationsByUser(userID)
+	var reservationsDto reservations_dto.ReservationsDto
+	reservationsDto, err := service.ReservationService.GetReservationsByUser(userID)
 
 	if err != nil {
 		c.JSON(err.Status(), err)
 		return
 	}
 
-	c.JSON(http.StatusOK, reservationsDetailDto)
+	c.JSON(http.StatusOK, reservationsDto)
 }
 
 func InsertReservation(c *gin.Context) {

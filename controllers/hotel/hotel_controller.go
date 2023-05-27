@@ -72,3 +72,39 @@ func HotelInsert(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, hotelDto)
 }
+
+func AddAmenitieToHotel(c *gin.Context) {
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	// Obtener el ID del usuario del contexto
+	userID := c.GetInt("user_id")
+	// Verificar si es admin
+	if !controllers.IsAdmin(userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
+		return
+	}
+
+	hotelID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid hotel ID"})
+		return
+	}
+
+	amenitieID, err := strconv.Atoi(c.Param("id_amenitie"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid amenitie ID"})
+		return
+	}
+
+	er := service.HotelService.AddAmenitieToHotel(hotelID, amenitieID)
+	if er != nil {
+		c.JSON(er.Status(), er)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Amenitie added to hotel successfully"})
+}

@@ -7,6 +7,7 @@ type Hotel struct {
 	Description    string `gorm:"type:varchar(250);not null"`
 
 	Amenities []*Amenitie `gorm:"many2many:hotel_amenities;"`
+	Images    []*Image    `gorm:"foreignKey:HotelID"`
 }
 
 type Hotels []Hotel

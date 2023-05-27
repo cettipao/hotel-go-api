@@ -14,4 +14,6 @@ type ReservationDetailDto struct {
 	HotelDescription string `json:"description"`
 }
 
-type ReservationsDetailDto []ReservationDetailDto
+type ReservationsDetailDto struct {
+	Reservations []ReservationDetailDto `json:"reservations"`
+}

@@ -12,6 +12,8 @@ var (
 
 func init() {
 	router = gin.Default()
+	// Configurar la ruta para servir archivos estáticos
+	router.Static("/images", "./images")
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"*"}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"}

@@ -14,7 +14,7 @@ type reservationService struct{}
 type reservationServiceInterface interface {
 	GetReservationById(id int) (reservations_dto.ReservationDetailDto, e.ApiError)
 	GetReservations() (reservations_dto.ReservationsDetailDto, e.ApiError)
-	GetReservationsByUser(id int) (reservations_dto.ReservationsDetailDto, e.ApiError)
+	GetReservationsByUser(id int) (reservations_dto.ReservationsDto, e.ApiError)
 	//GetReservationsByHotel() (dto.ReservationsDto, e.ApiError)
 	InsertReservation(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.ReservationDetailDto, e.ApiError)
 	RoomsAvailable(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.RoomsAvailable, e.ApiError)
@@ -47,23 +47,14 @@ func (s *reservationService) GetReservationById(id int) (reservations_dto.Reserv
 	reservationDetailDto.UserEmail = reservation.User.Email
 	reservationDetailDto.HotelName = reservation.Hotel.Name
 	reservationDetailDto.HotelDescription = reservation.Hotel.Description
-	/*
-		for _, reservations_dto := range users_dto.Reservations {
-			var dtoReservation dto.ReservationDto
-
-			dtoReservation.Id = reservations_dto.Id
-			dtoReservation.HotelName = reservations_dto.Name
-
-			userDetailDto.ReservationsDto = append(userDetailDto.ReservationsDto, dtoReservation)
-		}*/
 
 	return reservationDetailDto, nil
 }
 
 func (s *reservationService) GetReservations() (reservations_dto.ReservationsDetailDto, e.ApiError) {
-
 	var reservations = reservationClient.GetReservations()
 	var reservationsDetailDto reservations_dto.ReservationsDetailDto
+	reservationsDetailDto.Reservations = []reservations_dto.ReservationDetailDto{}
 
 	for _, reservation := range reservations {
 		var reservationDetailDto reservations_dto.ReservationDetailDto
@@ -76,36 +67,31 @@ func (s *reservationService) GetReservations() (reservations_dto.ReservationsDet
 		reservationDetailDto.HotelDescription = reservation.Hotel.Description
 		reservationDetailDto.InitialDate = reservation.InitialDate.Format(layout)
 		reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
-		reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
 
-		reservationsDetailDto = append(reservationsDetailDto, reservationDetailDto)
+		reservationsDetailDto.Reservations = append(reservationsDetailDto.Reservations, reservationDetailDto)
 	}
 
 	return reservationsDetailDto, nil
 }
 
-func (s *reservationService) GetReservationsByUser(id int) (reservations_dto.ReservationsDetailDto, e.ApiError) {
+func (s *reservationService) GetReservationsByUser(id int) (reservations_dto.ReservationsDto, e.ApiError) {
 
 	var reservations = reservationClient.GetReservationsByUser(id)
-	var reservationsDetailDto reservations_dto.ReservationsDetailDto
+	var reservationsDto reservations_dto.ReservationsDto
+	reservationsDto.Reservations = []reservations_dto.ReservationDto{}
 
 	for _, reservation := range reservations {
-		var reservationDetailDto reservations_dto.ReservationDetailDto
-		reservationDetailDto.Id = reservation.Id
-		reservationDetailDto.UserName = reservation.User.Name
-		reservationDetailDto.UserLastName = reservation.User.LastName
-		reservationDetailDto.UserDni = reservation.User.Dni
-		reservationDetailDto.UserEmail = reservation.User.Email
-		reservationDetailDto.HotelName = reservation.Hotel.Name
-		reservationDetailDto.HotelDescription = reservation.Hotel.Description
-		reservationDetailDto.InitialDate = reservation.InitialDate.Format(layout)
-		reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
-		reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
+		var reservationDto reservations_dto.ReservationDto
+		reservationDto.Id = reservation.Id
+		reservationDto.HotelName = reservation.Hotel.Name
+		reservationDto.InitialDate = reservation.InitialDate.Format(layout)
+		reservationDto.FinalDate = reservation.FinalDate.Format(layout)
+		reservationDto.FinalDate = reservation.FinalDate.Format(layout)
 
-		reservationsDetailDto = append(reservationsDetailDto, reservationDetailDto)
+		reservationsDto.Reservations = append(reservationsDto.Reservations, reservationDto)
 	}
 
-	return reservationsDetailDto, nil
+	return reservationsDto, nil
 }
 
 func (s *reservationService) InsertReservation(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.ReservationDetailDto, e.ApiError) {

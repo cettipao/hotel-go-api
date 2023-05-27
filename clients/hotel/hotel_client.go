@@ -12,7 +12,7 @@ func GetHotelById(id int) model.Hotel {
 	var hotel model.Hotel
 
 	//Db.Where("id = ?", id).Preload("Address").Preload("Telephones").First(&users_dto)
-	Db.Where("id = ?", id).First(&hotel)
+	Db.Where("id = ?", id).Preload("Amenities").Preload("Images").First(&hotel)
 	log.Debug("Hotel: ", hotel)
 
 	return hotel
@@ -21,9 +21,9 @@ func GetHotelById(id int) model.Hotel {
 func GetHotels() model.Hotels {
 	var hotels model.Hotels
 	//Db.Preload("Address").Find(&users)
-	Db.Find(&hotels)
+	Db.Preload("Amenities").Preload("Images").Find(&hotels)
 
-	log.Debug("Users: ", hotels)
+	log.Debug("Hotels: ", hotels)
 
 	return hotels
 }
@@ -37,4 +37,9 @@ func InsertHotel(hotel model.Hotel) model.Hotel {
 	}
 	log.Debug("Hotel Created: ", hotel.Id)
 	return hotel
+}
+
+func UpdateHotel(hotel model.Hotel) {
+	Db.Save(&hotel)
+	log.Debug("Hotel Updated: ", hotel.Id)
 }

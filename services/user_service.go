@@ -1,9 +1,7 @@
 package services
 
 import (
-	log "github.com/sirupsen/logrus"
 	userCliente "mvc-go/clients/user"
-	reservations_dto "mvc-go/dto/reservations_dto"
 	"mvc-go/dto/users_dto"
 	"mvc-go/model"
 	"mvc-go/services/login"
@@ -28,12 +26,11 @@ func init() {
 }
 
 func (s *userService) GetUserById(id int) (users_dto.UserDetailDto, e.ApiError) {
-
 	var user model.User = userCliente.GetUserById(id)
 	var userDetailDto users_dto.UserDetailDto
 
 	if user.Id == 0 {
-		return userDetailDto, e.NewBadRequestApiError("users_dto not found")
+		return userDetailDto, e.NewBadRequestApiError("User not found")
 	}
 
 	userDetailDto.Name = user.Name
@@ -42,34 +39,25 @@ func (s *userService) GetUserById(id int) (users_dto.UserDetailDto, e.ApiError) 
 	userDetailDto.Email = user.Email
 	userDetailDto.Admin = user.Admin
 
-	log.Debug(len(user.Reservations))
-
-	for _, reservation := range user.Reservations {
-		var dtoReservation reservations_dto.ReservationDto
-
-		dtoReservation.Id = reservation.Id
-		dtoReservation.HotelName = reservation.Hotel.Name
-
-		userDetailDto.ReservationsDto = append(userDetailDto.ReservationsDto, dtoReservation)
-	}
-
 	return userDetailDto, nil
 }
 
 func (s *userService) GetUsers() (users_dto.UsersDto, e.ApiError) {
-
 	var users model.Users = userCliente.GetUsers()
-	var usersDto users_dto.UsersDto
+	usersDto := users_dto.UsersDto{
+		Users: make([]users_dto.UserDto, len(users)),
+	}
 
-	for _, user := range users {
-		var userDto users_dto.UserDto
-		userDto.Id = user.Id
-		userDto.Name = user.Name
-		userDto.LastName = user.LastName
-		userDto.Dni = user.Dni
-		userDto.Email = user.Email
+	for i, user := range users {
+		userDto := users_dto.UserDto{
+			Id:       user.Id,
+			Name:     user.Name,
+			LastName: user.LastName,
+			Dni:      user.Dni,
+			Email:    user.Email,
+		}
 
-		usersDto = append(usersDto, userDto)
+		usersDto.Users[i] = userDto
 	}
 
 	return usersDto, nil

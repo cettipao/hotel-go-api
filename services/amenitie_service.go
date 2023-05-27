@@ -1,84 +1,85 @@
 package services
 
 import (
-	hotelCliente "mvc-go/clients/hotel"
+	amenitieCliente "mvc-go/clients/amenitie"
 	"mvc-go/dto/hotels_dto"
 	"mvc-go/model"
 	e "mvc-go/utils/errors"
 )
 
-type hotelService struct{}
+type amenitieService struct{}
 
-type hotelServiceInterface interface {
-	GetHotelById(id int) (hotels_dto.HotelDetailDto, e.ApiError)
-	GetHotels() (hotels_dto.HotelsDto, e.ApiError)
-	InsertHotel(userDto hotels_dto.HotelDto) (hotels_dto.HotelDto, e.ApiError)
+type amenitieServiceInterface interface {
+	GetAmenitieById(id int) (hotels_dto.AmenitieDto, e.ApiError)
+	GetAmenities() (hotels_dto.AmenitiesDto, e.ApiError)
+	InsertAmenitie(amenitieDto hotels_dto.AmenitieDto) (hotels_dto.AmenitieDto, e.ApiError)
+	GetAmenitiesByHotelId(hotelId int) (hotels_dto.AmenitiesDto, e.ApiError)
 }
 
 var (
-	HotelService hotelServiceInterface
+	AmenitieService amenitieServiceInterface
 )
 
 func init() {
-	HotelService = &hotelService{}
+	AmenitieService = &amenitieService{}
 }
 
-func (s *hotelService) GetHotelById(id int) (hotels_dto.HotelDetailDto, e.ApiError) {
+func (s *amenitieService) GetAmenitieById(id int) (hotels_dto.AmenitieDto, e.ApiError) {
+	var amenitie model.Amenitie = amenitieCliente.GetAmenitieById(id)
+	var amenitieDto hotels_dto.AmenitieDto
 
-	var hotel model.Hotel = hotelCliente.GetHotelById(id)
-	var hotelDetailDto hotels_dto.HotelDetailDto
-
-	if hotel.Id == 0 {
-		return hotelDetailDto, e.NewBadRequestApiError("hotels_dto not found")
+	if amenitie.Id == 0 {
+		return amenitieDto, e.NewBadRequestApiError("Amenitie not found")
 	}
 
-	hotelDetailDto.Name = hotel.Name
-	hotelDetailDto.Description = hotel.Description
-	hotelDetailDto.RoomsAvailable = hotel.RoomsAvailable
-	/*
-		for _, reservations_dto := range users_dto.Reservations {
-			var dtoReservation dto.ReservationDto
+	amenitieDto.Id = amenitie.Id
+	amenitieDto.Name = amenitie.Name
 
-			dtoReservation.Id = reservations_dto.Id
-			dtoReservation.HotelName = reservations_dto.Name
-
-			userDetailDto.ReservationsDto = append(userDetailDto.ReservationsDto, dtoReservation)
-		}*/
-
-	return hotelDetailDto, nil
+	return amenitieDto, nil
 }
 
-func (s *hotelService) GetHotels() (hotels_dto.HotelsDto, e.ApiError) {
+func (s *amenitieService) GetAmenities() (hotels_dto.AmenitiesDto, e.ApiError) {
+	var amenities model.Amenities = amenitieCliente.GetAmenities()
+	amenitiesList := make([]hotels_dto.AmenitieDto, 0)
 
-	var hotels model.Hotels = hotelCliente.GetHotels()
-	hotelsList := make([]hotels_dto.HotelDto, 0)
+	for _, amenitie := range amenities {
+		var amenitieDto hotels_dto.AmenitieDto
+		amenitieDto.Id = amenitie.Id
+		amenitieDto.Name = amenitie.Name
 
-	for _, hotel := range hotels {
-		var hotelDto hotels_dto.HotelDto
-		hotelDto.Id = hotel.Id
-		hotelDto.Name = hotel.Name
-		hotelDto.Description = hotel.Description
-		hotelDto.RoomsAvailable = hotel.RoomsAvailable
-
-		hotelsList = append(hotelsList, hotelDto)
+		amenitiesList = append(amenitiesList, amenitieDto)
 	}
 
-	return hotels_dto.HotelsDto{
-		Hotels: hotelsList,
+	return hotels_dto.AmenitiesDto{
+		Amenities: amenitiesList,
 	}, nil
 }
 
-func (s *hotelService) InsertHotel(hotelDto hotels_dto.HotelDto) (hotels_dto.HotelDto, e.ApiError) {
+func (s *amenitieService) InsertAmenitie(amenitieDto hotels_dto.AmenitieDto) (hotels_dto.AmenitieDto, e.ApiError) {
+	var amenitie model.Amenitie
 
-	var hotel model.Hotel
+	amenitie.Name = amenitieDto.Name
 
-	hotel.Name = hotelDto.Name
-	hotel.Description = hotelDto.Description
-	hotel.RoomsAvailable = hotelDto.RoomsAvailable
+	amenitie = amenitieCliente.InsertAmenitie(amenitie)
 
-	hotel = hotelCliente.InsertHotel(hotel)
+	amenitieDto.Id = amenitie.Id
 
-	hotelDto.Id = hotel.Id
+	return amenitieDto, nil
+}
 
-	return hotelDto, nil
+func (s *amenitieService) GetAmenitiesByHotelId(hotelId int) (hotels_dto.AmenitiesDto, e.ApiError) {
+	var amenities model.Amenities = amenitieCliente.GetAmenitiesByHotelId(hotelId)
+	amenitiesList := make([]hotels_dto.AmenitieDto, 0)
+
+	for _, amenitie := range amenities {
+		var amenitieDto hotels_dto.AmenitieDto
+		amenitieDto.Id = amenitie.Id
+		amenitieDto.Name = amenitie.Name
+
+		amenitiesList = append(amenitiesList, amenitieDto)
+	}
+
+	return hotels_dto.AmenitiesDto{
+		Amenities: amenitiesList,
+	}, nil
 }

@@ -36,3 +36,15 @@ func InsertAmenitie(amenitie model.Amenitie) model.Amenitie {
 	log.Debug("Amenitie Created: ", amenitie.Id)
 	return amenitie
 }
+
+func GetAmenitiesByHotelId(hotelId int) model.Amenities {
+	var amenities model.Amenities
+
+	Db.Table("amenities").
+		Joins("JOIN hotel_amenities ON amenities.id = hotel_amenities.amenitie_id").
+		Where("hotel_amenities.hotel_id = ?", hotelId).
+		Find(&amenities)
+	log.Debug("Amenities by Hotel ID: ", amenities)
+
+	return amenities
+}
