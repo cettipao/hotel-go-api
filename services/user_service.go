@@ -15,6 +15,7 @@ type userServiceInterface interface {
 	GetUsers() (users_dto.UsersDto, e.ApiError)
 	InsertUser(userDto users_dto.UserDtoRegister) (users_dto.UserDetailDto, e.ApiError)
 	UserLogin(userDto users_dto.UserLoginDto) (users_dto.UserLoginResponseDto, e.ApiError)
+	IsEmailTaken(email string) bool
 }
 
 var (
@@ -103,4 +104,9 @@ func (s *userService) UserLogin(userDto users_dto.UserLoginDto) (users_dto.UserL
 	}
 	loginResponse.Token = token
 	return loginResponse, nil
+}
+
+func (s *userService) IsEmailTaken(email string) bool {
+	user := userCliente.GetUserByEmail(email)
+	return user.Id != 0
 }

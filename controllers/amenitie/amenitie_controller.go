@@ -63,6 +63,12 @@ func InsertAmenitie(c *gin.Context) {
 		return
 	}
 
+	// Verificar si alguno de los campos está vacío
+	if controllers.IsEmptyField(amenitieDto.Name) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Uno o varios de los campos obligatorios esta vacio o no se envio"})
+		return
+	}
+
 	amenitieDto, er := service.AmenitieService.InsertAmenitie(amenitieDto)
 	// Error del Insert
 	if er != nil {

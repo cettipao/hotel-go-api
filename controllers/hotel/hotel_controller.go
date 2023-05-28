@@ -63,6 +63,14 @@ func HotelInsert(c *gin.Context) {
 		return
 	}
 
+	// Verificar si alguno de los campos está vacío
+	if controllers.IsEmptyField(hotelDto.Name) ||
+		controllers.IsEmptyField(hotelDto.Description) ||
+		hotelDto.RoomsAvailable <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Uno o varios de los campos obligatorios esta vacio o no se envio"})
+		return
+	}
+
 	hotelDto, er := service.HotelService.InsertHotel(hotelDto)
 	// Error del Insert
 	if er != nil {

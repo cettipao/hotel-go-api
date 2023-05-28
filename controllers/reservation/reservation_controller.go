@@ -103,6 +103,15 @@ func InsertReservation(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
+
+	// Verificar si alguno de los campos está vacío
+	if controllers.IsEmptyField(reservationCreateDto.InitialDate) ||
+		controllers.IsEmptyField(reservationCreateDto.FinalDate) ||
+		reservationCreateDto.HotelId <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Uno o varios de los campos obligatorios esta vacio o no se envio"})
+		return
+	}
+
 	userID := c.GetInt("user_id")
 	reservationCreateDto.UserId = userID
 
