@@ -6,6 +6,7 @@ import (
 	service "mvc-go/services"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -109,6 +110,33 @@ func InsertReservation(c *gin.Context) {
 		controllers.IsEmptyField(reservationCreateDto.FinalDate) ||
 		reservationCreateDto.HotelId <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Uno o varios de los campos obligatorios esta vacio o no se envio"})
+		return
+	}
+
+	// Parsear las fechas iniciales y finales
+	layout := "02/01/2006"
+	initialDate, err := time.Parse(layout, reservationCreateDto.InitialDate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Fecha inicial inválida"})
+		return
+	}
+
+	finalDate, err := time.Parse(layout, reservationCreateDto.FinalDate)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Fecha final inválida"})
+		return
+	}
+
+	// Verificar si la fecha final es mayor que la fecha inicial
+	if finalDate.Before(initialDate) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "La fecha final debe ser mayor que la fecha inicial"})
+		return
+	}
+
+	//Verificar que haya rooms disponibles
+	rooms_available, _ := service.ReservationService.RoomsAvailable(reservationCreateDto)
+	if rooms_available.Rooms <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No hay habitaciones disponibles para esa fecha"})
 		return
 	}
 
