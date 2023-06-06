@@ -77,8 +77,12 @@ func GetReservationsByUser(c *gin.Context) {
 	// Obtener el ID del usuario del contexto
 	userID := c.GetInt("user_id")
 
+	// Obtener los query params de la solicitud
+	hotelID := c.Query("hotel_id")
+	date := c.Query("date")
+
 	var reservationsDto reservations_dto.ReservationsDto
-	reservationsDto, err := service.ReservationService.GetReservationsByUser(userID)
+	reservationsDto, err := service.ReservationService.GetReservationsByUser(userID, hotelID, date)
 
 	if err != nil {
 		c.JSON(err.Status(), err)
@@ -134,7 +138,7 @@ func InsertReservation(c *gin.Context) {
 	}
 
 	//Verificar que haya rooms disponibles
-	rooms_available, _ := service.ReservationService.RoomsAvailable(reservationCreateDto)
+	rooms_available, _ := service.ReservationService.RoomsAvailableHotel(reservationCreateDto)
 	if rooms_available.Rooms <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "No hay habitaciones disponibles para esa fecha"})
 		return
@@ -154,28 +158,19 @@ func InsertReservation(c *gin.Context) {
 	c.JSON(http.StatusCreated, reservationDetailDto)
 }
 
-// NO NECESITO AUTH
 func RoomsAvailable(c *gin.Context) {
 	// Obtener los parámetros de consulta
 	params := c.Request.URL.Query()
 
 	// Obtener los valores de los parámetros
-	hotelID, _ := strconv.Atoi(params.Get("hotel_id"))
 	initialDate := params.Get("initial_date")
 	finalDate := params.Get("final_date")
 
-	var reservationCreateDto reservations_dto.ReservationCreateDto
-	reservationCreateDto.HotelId = hotelID
-	reservationCreateDto.InitialDate = initialDate
-	reservationCreateDto.FinalDate = finalDate
-
-	var roomsAvailable reservations_dto.RoomsAvailable
-
-	roomsAvailable, er := service.ReservationService.RoomsAvailable(reservationCreateDto)
-
-	if er != nil {
-		c.JSON(er.Status(), er)
+	roomsAvailable, err := service.ReservationService.RoomsAvailable(initialDate, finalDate)
+	if err != nil {
+		c.JSON(err.Status(), err)
 		return
 	}
+
 	c.JSON(http.StatusOK, roomsAvailable)
 }

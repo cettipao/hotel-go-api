@@ -68,3 +68,30 @@ func InsertReservation(reservation model.Reservation) model.Reservation {
 	log.Debug("Reservation Created: ", reservation.Id)
 	return reservation
 }
+
+func GetReservationsByUserAndHotel(idUser int, hotelID string) model.Reservations {
+	var reservations model.Reservations
+	Db.Where("user_id = ? AND hotel_id = ?", idUser, hotelID).Preload("Hotel").Preload("User").Find(&reservations)
+
+	log.Debug("Reservations: ", reservations)
+
+	return reservations
+}
+
+func GetReservationsByUserAndDate(idUser int, date time.Time) model.Reservations {
+	var reservations model.Reservations
+	Db.Where("user_id = ? AND ? BETWEEN initial_date AND final_date", idUser, date).Preload("Hotel").Preload("User").Find(&reservations)
+
+	log.Debug("Reservations: ", reservations)
+
+	return reservations
+}
+
+func GetReservationsByUserAndHotelAndDate(idUser int, hotelID string, date time.Time) model.Reservations {
+	var reservations model.Reservations
+	Db.Where("user_id = ? AND hotel_id = ? AND ? BETWEEN initial_date AND final_date", idUser, hotelID, date).Preload("Hotel").Preload("User").Find(&reservations)
+
+	log.Debug("Reservations: ", reservations)
+
+	return reservations
+}
