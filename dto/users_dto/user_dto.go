@@ -6,6 +6,7 @@ type UserDto struct {
 	LastName string `json:"last_name"`
 	Email    string `json:"email"`
 	Dni      string `json:"dni"`
+	Admin    int    `json:"admin"`
 }
 
 type UsersDto struct {

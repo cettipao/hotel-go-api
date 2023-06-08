@@ -56,6 +56,7 @@ func (s *userService) GetUsers() (users_dto.UsersDto, e.ApiError) {
 			LastName: user.LastName,
 			Dni:      user.Dni,
 			Email:    user.Email,
+			Admin:    user.Admin,
 		}
 
 		usersDto.Users[i] = userDto

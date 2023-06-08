@@ -130,3 +130,24 @@ func UserLogin(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, loginResponse)
 }
+
+func GetMyUser(c *gin.Context) {
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	// Obtener el ID del usuario del contexto
+	userID := c.GetInt("user_id")
+
+	var userDto users_dto.UserDetailDto
+
+	userDto, err := service.UserService.GetUserById(userID)
+
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+	c.JSON(http.StatusOK, userDto)
+}
