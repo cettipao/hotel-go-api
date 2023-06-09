@@ -37,6 +37,18 @@ func GetImagesByHotelId(c *gin.Context) {
 	c.JSON(http.StatusOK, imagesDto)
 }
 
+func GetImages(c *gin.Context) {
+
+	imagesDto, err := service.ImageService.GetImages()
+
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	c.JSON(http.StatusOK, imagesDto)
+}
+
 func InsertImage(c *gin.Context) {
 	// Obtener el ID del hotel del contexto o de los parámetros de la ruta, según sea necesario
 	hotelID, erint := strconv.Atoi(c.Param("id"))

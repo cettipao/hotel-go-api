@@ -17,6 +17,7 @@ type imageService struct{}
 type imageServiceInterface interface {
 	GetImageById(id int) (images_dto.ImageDto, e.ApiError)
 	GetImagesByHotelId(hotelID int) (images_dto.ImagesDto, e.ApiError)
+	GetImages() (images_dto.ImagesDto, e.ApiError)
 	InsertImage(hotelID int, imageFile *multipart.FileHeader) (images_dto.ImageDto, e.ApiError)
 }
 
@@ -50,6 +51,24 @@ func (s *imageService) GetImagesByHotelId(hotelID int) (images_dto.ImagesDto, e.
 		imageDto := images_dto.ImageDto{
 			ID:   image.ID,
 			Path: image.Path,
+		}
+		imageDtos[i] = imageDto
+	}
+
+	return images_dto.ImagesDto{
+		Images: imageDtos,
+	}, nil
+}
+
+func (s *imageService) GetImages() (images_dto.ImagesDto, e.ApiError) {
+	images := imageClient.GetImages()
+	imageDtos := make([]images_dto.ImageDto, len(images))
+
+	for i, image := range images {
+		imageDto := images_dto.ImageDto{
+			ID:      image.ID,
+			Path:    image.Path,
+			HotelID: image.HotelID,
 		}
 		imageDtos[i] = imageDto
 	}

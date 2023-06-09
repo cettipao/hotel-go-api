@@ -15,7 +15,7 @@ func GetHotelById(c *gin.Context) {
 	log.Debug("Hotel id to load: " + c.Param("id"))
 
 	id, _ := strconv.Atoi(c.Param("id"))
-	var hotelDto hotels_dto.HotelDetailDto
+	var hotelDto hotels_dto.HotelDto
 
 	hotelDto, err := service.HotelService.GetHotelById(id)
 

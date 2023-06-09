@@ -7,5 +7,5 @@ type ImageDto struct {
 }
 
 type ImagesDto struct {
-	Images []ImageDto `json:"imagenes"`
+	Images []ImageDto `json:"images"`
 }

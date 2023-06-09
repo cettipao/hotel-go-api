@@ -11,7 +11,7 @@ import (
 type hotelService struct{}
 
 type hotelServiceInterface interface {
-	GetHotelById(id int) (hotels_dto.HotelDetailDto, e.ApiError)
+	GetHotelById(id int) (hotels_dto.HotelDto, e.ApiError)
 	GetHotels() (hotels_dto.HotelsDto, e.ApiError)
 	InsertHotel(userDto hotels_dto.HotelDto) (hotels_dto.HotelDto, e.ApiError)
 	AddAmenitieToHotel(hotelID, amenitieID int) e.ApiError
@@ -25,29 +25,35 @@ func init() {
 	HotelService = &hotelService{}
 }
 
-func (s *hotelService) GetHotelById(id int) (hotels_dto.HotelDetailDto, e.ApiError) {
+func (s *hotelService) GetHotelById(id int) (hotels_dto.HotelDto, e.ApiError) {
 
-	var hotel model.Hotel = hotelCliente.GetHotelById(id)
-	var hotelDetailDto hotels_dto.HotelDetailDto
+	var hotel = hotelCliente.GetHotelById(id)
+	var hotelDto hotels_dto.HotelDto
 
 	if hotel.Id == 0 {
-		return hotelDetailDto, e.NewBadRequestApiError("hotels_dto not found")
+		return hotelDto, e.NewBadRequestApiError("hotels_dto not found")
 	}
 
-	hotelDetailDto.Name = hotel.Name
-	hotelDetailDto.Description = hotel.Description
-	hotelDetailDto.RoomsAvailable = hotel.RoomsAvailable
-	/*
-		for _, reservations_dto := range users_dto.Reservations {
-			var dtoReservation dto.ReservationDto
+	hotelDto.Id = hotel.Id
+	hotelDto.Name = hotel.Name
+	hotelDto.Description = hotel.Description
+	hotelDto.RoomsAvailable = hotel.RoomsAvailable
 
-			dtoReservation.Id = reservations_dto.Id
-			dtoReservation.HotelName = reservations_dto.Name
+	// Obtener los amenities del hotel
+	amenities := make([]string, 0)
+	for _, amenity := range hotel.Amenities {
+		amenities = append(amenities, amenity.Name)
+	}
+	hotelDto.Amenities = amenities
 
-			userDetailDto.ReservationsDto = append(userDetailDto.ReservationsDto, dtoReservation)
-		}*/
+	// Obtener las imágenes del hotel
+	images := make([]string, 0)
+	for _, image := range hotel.Images {
+		images = append(images, image.Path)
+	}
+	hotelDto.Images = images
 
-	return hotelDetailDto, nil
+	return hotelDto, nil
 }
 
 func (s *hotelService) GetHotels() (hotels_dto.HotelsDto, e.ApiError) {

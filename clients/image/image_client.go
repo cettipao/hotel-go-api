@@ -26,6 +26,15 @@ func GetImagesByHotelId(hotelID int) model.Images {
 	return images
 }
 
+func GetImages() model.Images {
+	var images model.Images
+
+	Db.Find(&images)
+	log.Debug("Images: ", images)
+
+	return images
+}
+
 func InsertImage(image model.Image) model.Image {
 	result := Db.Create(&image)
 
