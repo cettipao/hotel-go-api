@@ -78,3 +78,43 @@ func InsertAmenitie(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, amenitieDto)
 }
+
+func GetHotelAmenities(c *gin.Context) {
+	// Obtener los hoteles y amenidades desde el servicio
+	hotelsDto, err := service.HotelService.GetHotels()
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	amenitiesDto, err := service.AmenitieService.GetAmenities()
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+
+	// Obtener la lista de hoteles y amenidades desde los objetos Dto
+	hotels := hotelsDto.Hotels
+	amenities := amenitiesDto.Amenities
+
+	// Crear la estructura de datos para las relaciones
+	hotelAmenities := make([]map[string]interface{}, 0)
+
+	// Recorrer los hoteles y amenidades para generar las relaciones
+	for _, hotel := range hotels {
+		for _, amenitie := range amenities {
+			hotelAmenity := make(map[string]interface{})
+			hotelAmenity["hotel_name"] = hotel.Name
+			hotelAmenity["hotel_id"] = hotel.Id
+			hotelAmenity["amenitie"] = amenitie.Name
+			hotelAmenity["amenitie_id"] = amenitie.Id
+
+			hotelAmenities = append(hotelAmenities, hotelAmenity)
+		}
+	}
+
+	// Retornar el resultado como JSON
+	c.JSON(http.StatusOK, gin.H{
+		"hotel_amenitie": hotelAmenities,
+	})
+}

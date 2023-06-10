@@ -26,6 +26,7 @@ func mapUrls() {
 	// Amenities Mapping
 	router.GET("/amenitie/:id", amenitieController.GetAmenitieById)
 	router.GET("/amenitie", amenitieController.GetAmenities)
+	router.GET("/hotel_amenitie", amenitieController.GetHotelAmenities)
 	router.POST("/amenitie", amenitieController.InsertAmenitie)
 	// Images Mapping
 	//router.GET("/images/:id", imageController.GetImageById)
