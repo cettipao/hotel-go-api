@@ -43,3 +43,13 @@ func UpdateHotel(hotel model.Hotel) {
 	Db.Save(&hotel)
 	log.Debug("Hotel Updated: ", hotel.Id)
 }
+
+func IsAmenitieAlreadyLinked(hotelID, amenitieID int) bool {
+	var count int
+	err := Db.Table("hotel_amenities").
+		Where("hotel_id = ? AND amenitie_id = ?", hotelID, amenitieID).
+		Count(&count).
+		Error
+
+	return err == nil && count > 0
+}

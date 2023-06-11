@@ -80,6 +80,20 @@ func InsertAmenitie(c *gin.Context) {
 }
 
 func GetHotelAmenities(c *gin.Context) {
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	// Obtener el ID del usuario del contexto
+	userID := c.GetInt("user_id")
+	// Verificar si es admin
+	if !controllers.IsAdmin(userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
+		return
+	}
+
 	// Obtener los hoteles y amenidades desde el servicio
 	hotelsDto, err := service.HotelService.GetHotels()
 	if err != nil {
@@ -87,21 +101,21 @@ func GetHotelAmenities(c *gin.Context) {
 		return
 	}
 
-	amenitiesDto, err := service.AmenitieService.GetAmenities()
-	if err != nil {
-		c.JSON(err.Status(), err)
-		return
-	}
-
 	// Obtener la lista de hoteles y amenidades desde los objetos Dto
 	hotels := hotelsDto.Hotels
-	amenities := amenitiesDto.Amenities
 
 	// Crear la estructura de datos para las relaciones
 	hotelAmenities := make([]map[string]interface{}, 0)
 
 	// Recorrer los hoteles y amenidades para generar las relaciones
 	for _, hotel := range hotels {
+
+		amenitiesDto, err := service.AmenitieService.GetAmenitiesByHotelId(hotel.Id)
+		if err != nil {
+			c.JSON(err.Status(), err)
+			return
+		}
+		amenities := amenitiesDto.Amenities
 		for _, amenitie := range amenities {
 			hotelAmenity := make(map[string]interface{})
 			hotelAmenity["hotel_name"] = hotel.Name

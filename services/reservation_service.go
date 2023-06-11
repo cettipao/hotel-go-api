@@ -1,6 +1,7 @@
 package services
 
 import (
+	log "github.com/sirupsen/logrus"
 	hotelClient "mvc-go/clients/hotel"
 	reservationClient "mvc-go/clients/reservation"
 	"mvc-go/dto/reservations_dto"
@@ -14,11 +15,10 @@ type reservationService struct{}
 type reservationServiceInterface interface {
 	GetReservationById(id int) (reservations_dto.ReservationDetailDto, e.ApiError)
 	GetReservations() (reservations_dto.ReservationsDetailDto, e.ApiError)
-	GetReservationsByUser(id int, hotelID string, date string) (reservations_dto.ReservationsDto, e.ApiError)
-	//GetReservationsByHotel() (dto.ReservationsDto, e.ApiError)
 	InsertReservation(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.ReservationDetailDto, e.ApiError)
 	RoomsAvailable(initialDate string, finalDate string) (reservations_dto.RoomsResponse, e.ApiError)
 	RoomsAvailableHotel(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.RoomsAvailable, e.ApiError)
+	GetFilteredReservations(hotelID int, userID int, startDate string, endDate string) (reservations_dto.ReservationsDetailDto, error)
 }
 
 var (
@@ -73,49 +73,6 @@ func (s *reservationService) GetReservations() (reservations_dto.ReservationsDet
 	}
 
 	return reservationsDetailDto, nil
-}
-
-func (s *reservationService) GetReservationsByUser(id int, hotelID string, date string) (reservations_dto.ReservationsDto, e.ApiError) {
-	var reservations []model.Reservation
-
-	//Los con algo
-	if hotelID != "" && date != "" {
-		initialDate, err := time.Parse(layout, date)
-		if err != nil {
-			return reservations_dto.ReservationsDto{}, e.NewBadRequestApiError("Invalid date format")
-		}
-
-		reservations = reservationClient.GetReservationsByUserAndHotelAndDate(id, hotelID, initialDate)
-		//Solo hotel
-	} else if hotelID != "" {
-		reservations = reservationClient.GetReservationsByUserAndHotel(id, hotelID)
-		//Solo fecha
-	} else if date != "" {
-		initialDate, err := time.Parse(layout, date)
-		if err != nil {
-			return reservations_dto.ReservationsDto{}, e.NewBadRequestApiError("Invalid date format")
-		}
-
-		reservations = reservationClient.GetReservationsByUserAndDate(id, initialDate)
-		//Ninguno de los dos
-	} else {
-		reservations = reservationClient.GetReservationsByUser(id)
-	}
-
-	var reservationsDto reservations_dto.ReservationsDto
-	reservationsDto.Reservations = []reservations_dto.ReservationDto{}
-
-	for _, reservation := range reservations {
-		var reservationDto reservations_dto.ReservationDto
-		reservationDto.Id = reservation.Id
-		reservationDto.HotelName = reservation.Hotel.Name
-		reservationDto.InitialDate = reservation.InitialDate.Format(layout)
-		reservationDto.FinalDate = reservation.FinalDate.Format(layout)
-
-		reservationsDto.Reservations = append(reservationsDto.Reservations, reservationDto)
-	}
-
-	return reservationsDto, nil
 }
 
 func (s *reservationService) InsertReservation(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.ReservationDetailDto, e.ApiError) {
@@ -179,4 +136,76 @@ func (s *reservationService) RoomsAvailableHotel(reservationDto reservations_dto
 	roomsAvailable.Rooms = hotel_rooms - reservations
 
 	return roomsAvailable, nil
+}
+
+// En el archivo service/reservation_service.go
+
+func (s *reservationService) GetFilteredReservations(hotelID int, userID int, startDate string, endDate string) (reservations_dto.ReservationsDetailDto, error) {
+	// Realiza la lógica para filtrar las reservas según los parámetros proporcionados
+	newLayout := "2006-01-02"
+	// Crea una variable para almacenar las reservas filtradas
+	var filteredReservations = make([]reservations_dto.ReservationDetailDto, 0)
+
+	// Obtén todas las reservas existentes desde tu fuente de datos (por ejemplo, una base de datos)
+	allReservations := reservationClient.GetReservations()
+
+	// Aplica los filtros si se proporcionan
+	for _, reservation := range allReservations {
+		// Verifica si el ID del hotel coincide con el parámetro proporcionado
+		if hotelID != 0 && reservation.HotelId != hotelID {
+			continue
+		}
+
+		// Verifica si el ID del usuario coincide con el parámetro proporcionado
+		if userID != 0 && reservation.UserId != userID {
+			continue
+		}
+
+		// Verifica si la fecha de inicio coincide con el parámetro proporcionado
+		if startDate != "" {
+			startTime, err := time.Parse(newLayout, startDate)
+			if err != nil {
+				log.Error(err)
+				return reservations_dto.ReservationsDetailDto{}, err
+			}
+
+			if reservation.InitialDate.Before(startTime) {
+				continue
+			}
+		}
+
+		// Verifica si la fecha de finalización coincide con el parámetro proporcionado
+		if endDate != "" {
+			log.Error(endDate)
+			endTime, err := time.Parse(newLayout, endDate)
+			if err != nil {
+				log.Error(err)
+				return reservations_dto.ReservationsDetailDto{}, err
+			}
+
+			if reservation.FinalDate.After(endTime) {
+				continue
+			}
+		}
+
+		// Si la reserva pasa todos los filtros, agrégala a las reservas filtradas
+		var reservationDetailDto reservations_dto.ReservationDetailDto
+		reservationDetailDto.Id = reservation.Id
+		reservationDetailDto.UserName = reservation.User.Name
+		reservationDetailDto.UserLastName = reservation.User.LastName
+		reservationDetailDto.UserDni = reservation.User.Dni
+		reservationDetailDto.UserEmail = reservation.User.Email
+		reservationDetailDto.HotelName = reservation.Hotel.Name
+		reservationDetailDto.HotelDescription = reservation.Hotel.Description
+		reservationDetailDto.InitialDate = reservation.InitialDate.Format(layout)
+		reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
+		filteredReservations = append(filteredReservations, reservationDetailDto)
+	}
+
+	// Crea una instancia de ReservationsDetailDto y asigna las reservas filtradas
+	reservationsDto := reservations_dto.ReservationsDetailDto{
+		Reservations: filteredReservations,
+	}
+
+	return reservationsDto, nil
 }

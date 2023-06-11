@@ -1,6 +1,7 @@
 package userController
 
 import (
+	clients "mvc-go/clients/hotel"
 	"mvc-go/controllers"
 	"mvc-go/dto/hotels_dto"
 	service "mvc-go/services"
@@ -105,6 +106,12 @@ func AddAmenitieToHotel(c *gin.Context) {
 	amenitieID, err := strconv.Atoi(c.Param("id_amenitie"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid amenitie ID"})
+		return
+	}
+
+	// Verificar si la relación entre el hotel y el amenitie ya existe
+	if clients.IsAmenitieAlreadyLinked(hotelID, amenitieID) {
+		c.JSON(http.StatusConflict, gin.H{"error": "El amenitie ya está vinculado a este hotel"})
 		return
 	}
 

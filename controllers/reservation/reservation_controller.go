@@ -49,19 +49,54 @@ func GetReservations(c *gin.Context) {
 		return
 	}
 	// Obtener el ID del usuario del contexto
-	userID := c.GetInt("user_id")
+	userId := c.GetInt("user_id")
 	//Verificar si es admin
-	if !controllers.IsAdmin(userID) {
+	if !controllers.IsAdmin(userId) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
 		return
 	}
 
-	var reservationsDetailDto reservations_dto.ReservationsDetailDto
-	reservationsDetailDto, err := service.ReservationService.GetReservations()
+	// Obtener los parámetros de consulta
+	hotelID := c.Query("hotel_id")
+	userID := c.Query("user_id")
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
 
-	if err != nil {
-		c.JSON(err.Status(), err)
-		return
+	//Parseo a int
+	var parsedHotelID = 0
+	if hotelID == "" {
+		parsedHotelID = 0
+	} else {
+		var err error
+		parsedHotelID, err = strconv.Atoi(hotelID)
+		if err != nil {
+			log.Error(err)
+			c.JSON(http.StatusForbidden, gin.H{"error": "hotelId Invalido"})
+			return
+		}
+	}
+
+	// Parsea el userID a tipo int
+	var parsedUserID = 0
+	if userID == "" {
+		parsedUserID = 0
+	} else {
+		var err error
+		parsedUserID, err = strconv.Atoi(userID)
+		if err != nil {
+			log.Error(err)
+			c.JSON(http.StatusForbidden, gin.H{"error": "userId Invalido"})
+			return
+		}
+	}
+
+	// Aplicar los filtros si se proporcionaron
+	var reservationsDetailDto reservations_dto.ReservationsDetailDto
+
+	if hotelID != "" || userID != "" || startDate != "" || endDate != "" {
+		reservationsDetailDto, _ = service.ReservationService.GetFilteredReservations(parsedHotelID, parsedUserID, startDate, endDate)
+	} else {
+		reservationsDetailDto, _ = service.ReservationService.GetReservations()
 	}
 
 	c.JSON(http.StatusOK, reservationsDetailDto)
@@ -77,19 +112,35 @@ func GetReservationsByUser(c *gin.Context) {
 	// Obtener el ID del usuario del contexto
 	userID := c.GetInt("user_id")
 
-	// Obtener los query params de la solicitud
+	// Obtener los parámetros de consulta
 	hotelID := c.Query("hotel_id")
-	date := c.Query("date")
+	startDate := c.Query("start_date")
+	endDate := c.Query("end_date")
 
-	var reservationsDto reservations_dto.ReservationsDto
-	reservationsDto, err := service.ReservationService.GetReservationsByUser(userID, hotelID, date)
-
-	if err != nil {
-		c.JSON(err.Status(), err)
-		return
+	//Parseo a int
+	var parsedHotelID = 0
+	if hotelID == "" {
+		parsedHotelID = 0
+	} else {
+		var err error
+		parsedHotelID, err = strconv.Atoi(hotelID)
+		if err != nil {
+			log.Error(err)
+			c.JSON(http.StatusForbidden, gin.H{"error": "hotelId Invalido"})
+			return
+		}
 	}
 
-	c.JSON(http.StatusOK, reservationsDto)
+	// Aplicar los filtros si se proporcionaron
+	var reservationsDetailDto reservations_dto.ReservationsDetailDto
+
+	if hotelID != "" || startDate != "" || endDate != "" {
+		reservationsDetailDto, _ = service.ReservationService.GetFilteredReservations(parsedHotelID, userID, startDate, endDate)
+	} else {
+		reservationsDetailDto, _ = service.ReservationService.GetFilteredReservations(0, userID, "", "")
+	}
+
+	c.JSON(http.StatusOK, reservationsDetailDto)
 }
 
 func InsertReservation(c *gin.Context) {
