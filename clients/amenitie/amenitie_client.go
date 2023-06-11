@@ -1,9 +1,11 @@
 package clients
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"mvc-go/model"
+	e "mvc-go/utils/errors"
 )
 
 var Db *gorm.DB
@@ -47,4 +49,22 @@ func GetAmenitiesByHotelId(hotelId int) model.Amenities {
 	log.Debug("Amenities by Hotel ID: ", amenities)
 
 	return amenities
+}
+
+func DeleteAmenitieById(id int) e.ApiError {
+	// Lógica para eliminar el hotel por su ID en la capa de datos o API externa
+	err := Db.Delete(&model.Amenitie{}, id).Error
+	if err != nil {
+		// Manejar el error de eliminación del hotel según sea necesario
+		// Por ejemplo, puedes verificar si el error es de "registro no encontrado"
+		// y devolver un error personalizado utilizando la función NewNotFoundError
+		// de tu paquete de excepciones.
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return e.NewBadRequestApiError("Hotel not found")
+		}
+		// Otros errores de eliminación del hotel
+		return e.NewBadRequestApiError("Failed to delete amenitie")
+	}
+
+	return nil // Sin errores, se eliminó el amenitie correctamente
 }

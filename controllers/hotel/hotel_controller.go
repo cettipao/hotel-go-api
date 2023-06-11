@@ -27,6 +27,40 @@ func GetHotelById(c *gin.Context) {
 	c.JSON(http.StatusOK, hotelDto)
 }
 
+func DeleteHotelById(c *gin.Context) {
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	// Obtener el ID del usuario del contexto
+	userID := c.GetInt("user_id")
+	//Verificar si es admin
+	if !controllers.IsAdmin(userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
+		return
+	}
+
+	// Obtiene el ID del hotel de los parámetros de la solicitud
+	hotelID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid hotel ID"})
+		return
+	}
+
+	// Llama al servicio para eliminar el hotel por su ID
+	err = service.HotelService.DeleteHotelById(hotelID)
+	if err != nil {
+		// Verifica si se produjo un error específico de "hotel no encontrado"
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	// Si no se produjo ningún error, devuelve una respuesta exitosa
+	c.JSON(http.StatusOK, gin.H{"message": "Hotel deleted successfully"})
+}
+
 func GetHotels(c *gin.Context) {
 	var hotelsDto hotels_dto.HotelsDto
 	hotelsDto, err := service.HotelService.GetHotels()

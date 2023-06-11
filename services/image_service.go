@@ -19,6 +19,7 @@ type imageServiceInterface interface {
 	GetImagesByHotelId(hotelID int) (images_dto.ImagesDto, e.ApiError)
 	GetImages() (images_dto.ImagesDto, e.ApiError)
 	InsertImage(hotelID int, imageFile *multipart.FileHeader) (images_dto.ImageDto, e.ApiError)
+	DeleteImageById(id int) e.ApiError
 }
 
 var (
@@ -137,4 +138,21 @@ func saveImageToFile(imageFile *multipart.FileHeader, filePath string) error {
 	}
 
 	return nil
+}
+
+func (s *imageService) DeleteImageById(id int) e.ApiError {
+	// Verificar si la imagen existe
+	_, err := s.GetImageById(id)
+	if err != nil {
+		return err
+	}
+
+	// Lógica para eliminar la imagen por su ID
+	err = imageClient.DeleteImageById(id)
+	if err != nil {
+		// Otros errores de eliminación del hotel
+		return e.NewInternalServerApiError("Failed to delete image", err)
+	}
+
+	return nil // Sin errores, se eliminó el hotel correctamente
 }

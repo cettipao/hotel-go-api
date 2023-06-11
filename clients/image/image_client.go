@@ -1,9 +1,11 @@
 package clients
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"mvc-go/model"
+	e "mvc-go/utils/errors"
 )
 
 var Db *gorm.DB
@@ -44,4 +46,19 @@ func InsertImage(image model.Image) model.Image {
 	}
 	log.Debug("Image Created: ", image.ID)
 	return image
+}
+
+func DeleteImageById(id int) e.ApiError {
+
+	err := Db.Delete(&model.Image{}, id).Error
+	if err != nil {
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return e.NewBadRequestApiError("Image not found")
+		}
+
+		return e.NewBadRequestApiError("Failed to delete Image")
+	}
+
+	return nil // Sin errores, se eliminó el amenitie correctamente
 }

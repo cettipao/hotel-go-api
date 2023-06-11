@@ -19,12 +19,14 @@ func mapUrls() {
 	router.POST("/login", userController.UserLogin)
 	// Hotels Mapping
 	router.GET("/hotel/:id", hotelController.GetHotelById)
+	router.DELETE("/hotel/:id", hotelController.DeleteHotelById)
 	router.GET("/hotel", hotelController.GetHotels)
 	router.POST("/hotel", hotelController.HotelInsert)
 	router.PUT("/hotel/:id/add-amenitie/:id_amenitie", hotelController.AddAmenitieToHotel)
 	router.POST("/hotel/:id/add-image", imageController.InsertImage)
 	// Amenities Mapping
 	router.GET("/amenitie/:id", amenitieController.GetAmenitieById)
+	router.DELETE("/amenitie/:id", amenitieController.DeleteAmenitieById)
 	router.GET("/amenitie", amenitieController.GetAmenities)
 	router.GET("/hotel_amenitie", amenitieController.GetHotelAmenities)
 	router.POST("/amenitie", amenitieController.InsertAmenitie)
@@ -32,6 +34,7 @@ func mapUrls() {
 	//router.GET("/images/:id", imageController.GetImageById)
 	router.GET("/image/hotel/:id", imageController.GetImagesByHotelId)
 	router.GET("/image", imageController.GetImages)
+	router.DELETE("/image/:id", imageController.DeleteImageById)
 	// Reservations Mapping
 	router.GET("/reservation/:id", reservationController.GetReservationById)
 	router.GET("/reservation", reservationController.GetReservations)

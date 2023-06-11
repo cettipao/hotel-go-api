@@ -1,9 +1,11 @@
 package clients
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"mvc-go/model"
+	e "mvc-go/utils/errors"
 )
 
 var Db *gorm.DB
@@ -37,6 +39,45 @@ func InsertHotel(hotel model.Hotel) model.Hotel {
 	}
 	log.Debug("Hotel Created: ", hotel.Id)
 	return hotel
+}
+
+func DeleteHotelById(id int) e.ApiError {
+	// Obtén el hotel por su ID antes de eliminarlo
+	var hotel model.Hotel
+	if err := Db.First(&hotel, id).Error; err != nil {
+		// Maneja el error de búsqueda del hotel según sea necesario
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return e.NewBadRequestApiError("Hotel not found")
+		}
+		return e.NewBadRequestApiError("Failed to delete hotel")
+	}
+
+	// Obtiene las imágenes asociadas al hotel antes de eliminarlo
+	var images []model.Image
+	if err := Db.Model(&hotel).Association("Images").Find(&images).Error; err != nil {
+		// Maneja el error de búsqueda de imágenes según sea necesario
+		return e.NewBadRequestApiError("Failed to delete hotel images")
+	}
+
+	// Elimina todas las relaciones de hotel_amenitie en las que el hotel sea la entidad principal
+	if err := Db.Model(&hotel).Association("Amenities").Clear().Error; err != nil {
+		// Maneja el error de eliminación de las relaciones según sea necesario
+		return e.NewBadRequestApiError("Failed to delete hotel amenities")
+	}
+
+	// Elimina las imágenes de la base de datos
+	if err := Db.Delete(&images).Error; err != nil {
+		// Maneja el error de eliminación de imágenes según sea necesario
+		return e.NewBadRequestApiError("Failed to delete hotel images")
+	}
+
+	// Elimina el hotel por su ID
+	if err := Db.Delete(&hotel).Error; err != nil {
+		// Maneja el error de eliminación del hotel según sea necesario
+		return e.NewBadRequestApiError("Failed to delete hotel")
+	}
+
+	return nil // Sin errores, se eliminó el hotel correctamente
 }
 
 func UpdateHotel(hotel model.Hotel) {

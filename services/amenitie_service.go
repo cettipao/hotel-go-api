@@ -14,6 +14,7 @@ type amenitieServiceInterface interface {
 	GetAmenities() (hotels_dto.AmenitiesDto, e.ApiError)
 	InsertAmenitie(amenitieDto hotels_dto.AmenitieDto) (hotels_dto.AmenitieDto, e.ApiError)
 	GetAmenitiesByHotelId(hotelId int) (hotels_dto.AmenitiesDto, e.ApiError)
+	DeleteAmenitieById(id int) e.ApiError
 }
 
 var (
@@ -65,6 +66,23 @@ func (s *amenitieService) InsertAmenitie(amenitieDto hotels_dto.AmenitieDto) (ho
 	amenitieDto.Id = amenitie.Id
 
 	return amenitieDto, nil
+}
+
+func (s *amenitieService) DeleteAmenitieById(id int) e.ApiError {
+	// Verificar si el hotel existe
+	_, err := s.GetAmenitieById(id)
+	if err != nil {
+		return err
+	}
+
+	// Lógica para eliminar el hotel por su ID
+	err = amenitieCliente.DeleteAmenitieById(id)
+	if err != nil {
+		// Otros errores de eliminación del hotel
+		return e.NewInternalServerApiError("Failed to delete hotel", err)
+	}
+
+	return nil // Sin errores, se eliminó el hotel correctamente
 }
 
 func (s *amenitieService) GetAmenitiesByHotelId(hotelId int) (hotels_dto.AmenitiesDto, e.ApiError) {

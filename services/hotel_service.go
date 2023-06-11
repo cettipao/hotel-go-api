@@ -15,6 +15,7 @@ type hotelServiceInterface interface {
 	GetHotels() (hotels_dto.HotelsDto, e.ApiError)
 	InsertHotel(userDto hotels_dto.HotelDto) (hotels_dto.HotelDto, e.ApiError)
 	AddAmenitieToHotel(hotelID, amenitieID int) e.ApiError
+	DeleteHotelById(id int) e.ApiError
 }
 
 var (
@@ -54,6 +55,23 @@ func (s *hotelService) GetHotelById(id int) (hotels_dto.HotelDto, e.ApiError) {
 	hotelDto.Images = images
 
 	return hotelDto, nil
+}
+
+func (s *hotelService) DeleteHotelById(id int) e.ApiError {
+	// Verificar si el hotel existe
+	_, err := s.GetHotelById(id)
+	if err != nil {
+		return err
+	}
+
+	// Lógica para eliminar el hotel por su ID
+	err = hotelCliente.DeleteHotelById(id)
+	if err != nil {
+		// Otros errores de eliminación del hotel
+		return e.NewInternalServerApiError("Failed to delete hotel", err)
+	}
+
+	return nil // Sin errores, se eliminó el hotel correctamente
 }
 
 func (s *hotelService) GetHotels() (hotels_dto.HotelsDto, e.ApiError) {
