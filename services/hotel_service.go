@@ -15,7 +15,9 @@ type hotelServiceInterface interface {
 	GetHotels() (hotels_dto.HotelsDto, e.ApiError)
 	InsertHotel(userDto hotels_dto.HotelDto) (hotels_dto.HotelDto, e.ApiError)
 	AddAmenitieToHotel(hotelID, amenitieID int) e.ApiError
+	RemoveAmenitieToHotel(hotelID, amenitieID int) e.ApiError
 	DeleteHotelById(id int) e.ApiError
+	UpdateHotel(hotelDto hotels_dto.HotelDto, id int) (hotels_dto.HotelDto, e.ApiError)
 }
 
 var (
@@ -122,6 +124,20 @@ func (s *hotelService) InsertHotel(hotelDto hotels_dto.HotelDto) (hotels_dto.Hot
 	return hotelDto, nil
 }
 
+func (s *hotelService) UpdateHotel(hotelDto hotels_dto.HotelDto, id int) (hotels_dto.HotelDto, e.ApiError) {
+
+	var hotel model.Hotel
+
+	hotel.Id = id
+	hotel.Name = hotelDto.Name
+	hotel.Description = hotelDto.Description
+	hotel.RoomsAvailable = hotelDto.RoomsAvailable
+
+	hotelCliente.UpdateHotel(hotel)
+
+	return hotelDto, nil
+}
+
 func (s *hotelService) AddAmenitieToHotel(hotelID, amenitieID int) e.ApiError {
 	// Obtener el hotel por su ID
 	hotel := hotelCliente.GetHotelById(hotelID)
@@ -145,6 +161,51 @@ func (s *hotelService) AddAmenitieToHotel(hotelID, amenitieID int) e.ApiError {
 	// Asociar la amenidad al hotel
 	hotel.Amenities = append(hotel.Amenities, &amenitie)
 	hotelCliente.UpdateHotel(hotel)
+
+	return nil
+}
+
+func (s *hotelService) RemoveAmenitieToHotel(hotelID, amenitieID int) e.ApiError {
+	// Obtener el hotel por su ID
+	hotel := hotelCliente.GetHotelById(hotelID)
+	if hotel.Id == 0 {
+		return e.NewNotFoundApiError("Hotel not found")
+	}
+
+	// Obtener la amenidad por su ID
+	amenitie := amenitieCliente.GetAmenitieById(amenitieID)
+	if amenitie.Id == 0 {
+		return e.NewNotFoundApiError("Amenitie not found")
+	}
+
+	// Verificar si la amenidad ya está asociada al hotel
+	relation := false
+	for _, a := range hotel.Amenities {
+		if a.Id == amenitieID {
+			relation = true
+		}
+	}
+	if !relation {
+		return e.NewBadRequestApiError("Amenitie not linked with hotel")
+	}
+	// Eliminar la amenidad al hotel
+	// Encuentra el índice del amenitie que deseas eliminar
+	var indexToRemove int = -1
+	for i, a := range hotel.Amenities {
+		if a.Id == amenitie.Id {
+			indexToRemove = i
+			break
+		}
+	}
+
+	// Si se encontró el amenitie, elimínalo de la lista
+	if indexToRemove != -1 {
+		hotel.Amenities = append(hotel.Amenities[:indexToRemove], hotel.Amenities[indexToRemove+1:]...)
+	}
+
+	// Actualiza el hotel en la base de datos
+	hotelCliente.UpdateHotel(hotel)
+	hotelCliente.DeleteLinkAmenitieHotel(hotelID, amenitieID)
 
 	return nil
 }

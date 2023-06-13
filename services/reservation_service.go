@@ -14,6 +14,7 @@ type reservationService struct{}
 
 type reservationServiceInterface interface {
 	GetReservationById(id int) (reservations_dto.ReservationDetailDto, e.ApiError)
+	DeleteReservationById(id int) e.ApiError
 	GetReservations() (reservations_dto.ReservationsDetailDto, e.ApiError)
 	InsertReservation(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.ReservationDetailDto, e.ApiError)
 	RoomsAvailable(initialDate string, finalDate string) (reservations_dto.RoomsResponse, e.ApiError)
@@ -50,6 +51,15 @@ func (s *reservationService) GetReservationById(id int) (reservations_dto.Reserv
 	reservationDetailDto.HotelDescription = reservation.Hotel.Description
 
 	return reservationDetailDto, nil
+}
+
+func (s *reservationService) DeleteReservationById(id int) e.ApiError {
+
+	err := reservationClient.DeleteReservationById(id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *reservationService) GetReservations() (reservations_dto.ReservationsDetailDto, e.ApiError) {

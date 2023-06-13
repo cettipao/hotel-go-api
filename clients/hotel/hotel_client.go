@@ -80,9 +80,15 @@ func DeleteHotelById(id int) e.ApiError {
 	return nil // Sin errores, se eliminó el hotel correctamente
 }
 
-func UpdateHotel(hotel model.Hotel) {
-	Db.Save(&hotel)
+func UpdateHotel(hotel model.Hotel) e.ApiError {
+	err := Db.Save(&hotel)
+	if err != nil {
+		//TODO Manage Errors
+		log.Error(err)
+		return e.NewBadRequestApiError("Failed to delete hotel amenities")
+	}
 	log.Debug("Hotel Updated: ", hotel.Id)
+	return nil
 }
 
 func IsAmenitieAlreadyLinked(hotelID, amenitieID int) bool {
@@ -93,4 +99,16 @@ func IsAmenitieAlreadyLinked(hotelID, amenitieID int) bool {
 		Error
 
 	return err == nil && count > 0
+}
+
+func DeleteLinkAmenitieHotel(hotelID int, amenitieID int) bool {
+	// Eliminar la fila que vincula el hotel y la amenidad en "hotel_amenities"
+	result := Db.Table("hotel_amenities").
+		Where("hotel_id = ? AND amenitie_id = ?", hotelID, amenitieID).
+		Delete(nil)
+	if result.Error != nil {
+		// Manejar el error en caso de que ocurra
+		return false
+	}
+	return true
 }

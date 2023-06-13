@@ -19,6 +19,16 @@ func GetAmenitieById(id int) model.Amenitie {
 	return amenitie
 }
 
+func UpdateAmenitie(amenitie model.Amenitie) model.Amenitie {
+	result := Db.Save(&amenitie)
+	if result.Error != nil {
+		//TODO Manage Errors
+		log.Error("")
+	}
+	log.Debug("Amenitie Updated: ", amenitie.Id)
+	return amenitie
+}
+
 func GetAmenities() model.Amenities {
 	var amenities model.Amenities
 

@@ -15,6 +15,7 @@ type amenitieServiceInterface interface {
 	InsertAmenitie(amenitieDto hotels_dto.AmenitieDto) (hotels_dto.AmenitieDto, e.ApiError)
 	GetAmenitiesByHotelId(hotelId int) (hotels_dto.AmenitiesDto, e.ApiError)
 	DeleteAmenitieById(id int) e.ApiError
+	UpdateAmenitie(amenitieDto hotels_dto.AmenitieDto, id int) (hotels_dto.AmenitieDto, e.ApiError)
 }
 
 var (
@@ -64,6 +65,17 @@ func (s *amenitieService) InsertAmenitie(amenitieDto hotels_dto.AmenitieDto) (ho
 	amenitie = amenitieCliente.InsertAmenitie(amenitie)
 
 	amenitieDto.Id = amenitie.Id
+
+	return amenitieDto, nil
+}
+
+func (s *amenitieService) UpdateAmenitie(amenitieDto hotels_dto.AmenitieDto, id int) (hotels_dto.AmenitieDto, e.ApiError) {
+	var amenitie model.Amenitie
+
+	amenitie.Name = amenitieDto.Name
+	amenitie.Id = id
+
+	amenitie = amenitieCliente.UpdateAmenitie(amenitie)
 
 	return amenitieDto, nil
 }

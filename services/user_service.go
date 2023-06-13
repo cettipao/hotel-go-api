@@ -16,6 +16,8 @@ type userServiceInterface interface {
 	InsertUser(userDto users_dto.UserDtoRegister) (users_dto.UserDetailDto, e.ApiError)
 	UserLogin(userDto users_dto.UserLoginDto) (users_dto.UserLoginResponseDto, e.ApiError)
 	IsEmailTaken(email string) bool
+	DeleteUserById(id int) e.ApiError
+	UpdateUser(userDto users_dto.UserDtoRegister, id int) e.ApiError
 }
 
 var (
@@ -63,6 +65,28 @@ func (s *userService) GetUsers() (users_dto.UsersDto, e.ApiError) {
 	}
 
 	return usersDto, nil
+}
+
+func (s *userService) UpdateUser(userDto users_dto.UserDtoRegister, id int) e.ApiError {
+
+	var user = userCliente.GetUserById(id)
+
+	user.Name = userDto.Name
+	user.LastName = userDto.LastName
+	user.Dni = userDto.Dni
+
+	err := userCliente.UpdateUser(user)
+
+	return err
+}
+
+func (s *userService) DeleteUserById(id int) e.ApiError {
+
+	err := userCliente.DeleteUserById(id)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *userService) InsertUser(userDto users_dto.UserDtoRegister) (users_dto.UserDetailDto, e.ApiError) {

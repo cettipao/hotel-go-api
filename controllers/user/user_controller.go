@@ -40,6 +40,35 @@ func GetUserById(c *gin.Context) {
 	c.JSON(http.StatusOK, userDto)
 }
 
+func DeleteUserById(c *gin.Context) {
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	// Obtener el ID del usuario del contexto
+	userID := c.GetInt("user_id")
+	//Verificar si es admin
+	if !controllers.IsAdmin(userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
+		return
+	}
+
+	log.Debug("User id to load: " + c.Param("id"))
+
+	id, _ := strconv.Atoi(c.Param("id"))
+	var userDto users_dto.UserDetailDto
+
+	err := service.UserService.DeleteUserById(id)
+
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+	c.JSON(http.StatusOK, userDto)
+}
+
 func GetUsers(c *gin.Context) {
 	controllers.TokenVerification()(c)
 	// Verificar si ocurrió un error durante la verificación del token
@@ -64,6 +93,38 @@ func GetUsers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, usersDto)
+}
+
+func UpdateUserById(c *gin.Context) {
+	var userDto users_dto.UserDtoRegister
+	err := c.BindJSON(&userDto)
+
+	// Error Parsing json param
+	if err != nil {
+		log.Error(err.Error())
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Verificar si alguno de los campos está vacío
+	if controllers.IsEmptyField(userDto.Name) || controllers.IsEmptyField(userDto.LastName) ||
+		controllers.IsEmptyField(userDto.Email) || controllers.IsEmptyField(userDto.Dni) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Uno o varios de los campos obligatorios esta vacio o no se envio"})
+		return
+	}
+
+	log.Debug("User id to load: " + c.Param("id"))
+
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	er := service.UserService.UpdateUser(userDto, id)
+	// Error del Insert
+	if er != nil {
+		c.JSON(er.Status(), er)
+		return
+	}
+
+	c.JSON(http.StatusCreated, "Usuario Modificado con exito")
 }
 
 func UserInsert(c *gin.Context) {

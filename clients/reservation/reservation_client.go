@@ -1,9 +1,11 @@
 package clients
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"mvc-go/model"
+	e "mvc-go/utils/errors"
 	"time"
 )
 
@@ -94,4 +96,23 @@ func GetReservationsByUserAndHotelAndDate(idUser int, hotelID string, date time.
 	log.Debug("Reservations: ", reservations)
 
 	return reservations
+}
+
+func DeleteReservationById(id int) e.ApiError {
+	// Obtén el hotel por su ID antes de eliminarlo
+	var reservation model.Reservation
+	if err := Db.First(&reservation, id).Error; err != nil {
+		// Maneja el error de búsqueda del hotel según sea necesario
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return e.NewBadRequestApiError("Reservation not found")
+		}
+		return e.NewBadRequestApiError("Failed to delete reservations")
+	}
+
+	if err := Db.Delete(&reservation).Error; err != nil {
+		// Maneja el error de eliminación del hotel según sea necesario
+		return e.NewBadRequestApiError("Failed to delete reservation")
+	}
+
+	return nil // Sin errores, se eliminó el hotel correctamente
 }

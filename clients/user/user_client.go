@@ -1,9 +1,11 @@
 package clients
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
 	log "github.com/sirupsen/logrus"
 	"mvc-go/model"
+	e "mvc-go/utils/errors"
 )
 
 var Db *gorm.DB
@@ -46,4 +48,30 @@ func InsertUser(user model.User) model.User {
 	}
 	log.Debug("User Created: ", user.Id)
 	return user
+}
+
+func DeleteUserById(id int) e.ApiError {
+	// Obtén el hotel por su ID antes de eliminarlo
+	var user model.User
+	if err := Db.First(&user, id).Error; err != nil {
+		// Maneja el error de búsqueda del hotel según sea necesario
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return e.NewBadRequestApiError("Reservation not user")
+		}
+		return e.NewBadRequestApiError("Failed to delete user")
+	}
+
+	if err := Db.Delete(&user).Error; err != nil {
+		// Maneja el error de eliminación del hotel según sea necesario
+		return e.NewBadRequestApiError("Failed to delete user")
+	}
+
+	return nil // Sin errores, se eliminó el hotel correctamente
+}
+
+func UpdateUser(user model.User) e.ApiError {
+	log.Debug(user)
+	Db.Save(&user)
+	log.Debug("user Updated: ", user.Id)
+	return nil
 }

@@ -41,6 +41,35 @@ func GetReservationById(c *gin.Context) {
 	c.JSON(http.StatusOK, reservationDetailDto)
 }
 
+func DeleteReservationById(c *gin.Context) {
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	// Obtener el ID del usuario del contexto
+	userID := c.GetInt("user_id")
+	//Verificar si es admin
+	if !controllers.IsAdmin(userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
+		return
+	}
+
+	log.Debug("Reservation id to delete: " + c.Param("id"))
+
+	id, _ := strconv.Atoi(c.Param("id"))
+	var reservationDetailDto reservations_dto.ReservationDetailDto
+
+	err := service.ReservationService.DeleteReservationById(id)
+
+	if err != nil {
+		c.JSON(err.Status(), err)
+		return
+	}
+	c.JSON(http.StatusOK, reservationDetailDto)
+}
+
 func GetReservations(c *gin.Context) {
 	controllers.TokenVerification()(c)
 	// Verificar si ocurrió un error durante la verificación del token

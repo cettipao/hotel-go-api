@@ -38,6 +38,51 @@ func GetAmenities(c *gin.Context) {
 	c.JSON(http.StatusOK, amenitiesDto)
 }
 
+func UpdateAmenitie(c *gin.Context) {
+	controllers.TokenVerification()(c)
+	// Verificar si ocurrió un error durante la verificación del token
+	if err := c.Errors.Last(); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	// Obtener el ID del usuario del contexto
+	userID := c.GetInt("user_id")
+	// Verificar si es admin
+	if !controllers.IsAdmin(userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
+		return
+	}
+
+	var amenitieDto amenities_dto.AmenitieDto
+	err := c.BindJSON(&amenitieDto)
+
+	// Error Parsing json param
+	if err != nil {
+		log.Error(err.Error())
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Verificar si alguno de los campos está vacío
+	if controllers.IsEmptyField(amenitieDto.Name) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Uno o varios de los campos obligatorios esta vacio o no se envio"})
+		return
+	}
+
+	log.Debug("Amenitie ID to load: " + c.Param("id"))
+
+	id, _ := strconv.Atoi(c.Param("id"))
+
+	amenitieDto, er := service.AmenitieService.UpdateAmenitie(amenitieDto, id)
+	// Error del Insert
+	if er != nil {
+		c.JSON(er.Status(), er)
+		return
+	}
+
+	c.JSON(http.StatusCreated, amenitieDto)
+}
+
 func InsertAmenitie(c *gin.Context) {
 	controllers.TokenVerification()(c)
 	// Verificar si ocurrió un error durante la verificación del token
