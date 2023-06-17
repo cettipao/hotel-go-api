@@ -115,12 +115,20 @@ func (s *reservationService) RoomsAvailable(initialDate string, finalDate string
 		hotelId := hotel.Id
 
 		// Obtener las reservas para el hotel y las fechas dadas
-		initalDate, _ := time.Parse(layout, initialDate)
+		initialDate, _ := time.Parse(layout, initialDate)
 		finalDate, _ := time.Parse(layout, finalDate)
-		reservations := reservationClient.GetReservationsByHotelAndDates(hotelId, initalDate, finalDate)
 
-		// Calcular las habitaciones disponibles
-		roomsAvailable := hotel.RoomsAvailable - reservations
+		var maxReservations int
+		hotelRooms := hotelClient.GetHotelById(hotelId).RoomsAvailable
+
+		for date := initialDate; date.Before(finalDate); date = date.AddDate(0, 0, 1) {
+			reservations := reservationClient.GetReservationsByHotelAndDate(hotelId, date)
+			if reservations > maxReservations {
+				maxReservations = reservations
+			}
+		}
+
+		roomsAvailable := hotelRooms - maxReservations
 
 		// Agregar la información del hotel y las habitaciones disponibles a la respuesta
 		roomInfo := reservations_dto.RoomInfo{
@@ -133,22 +141,6 @@ func (s *reservationService) RoomsAvailable(initialDate string, finalDate string
 
 	return response, nil
 }
-
-func (s *reservationService) RoomsAvailableHotel(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.RoomsAvailable, e.ApiError) {
-
-	hotelId := reservationDto.HotelId
-	initalDate, _ := time.Parse(layout, reservationDto.InitialDate)
-	finalDate, _ := time.Parse(layout, reservationDto.FinalDate)
-	var reservations = reservationClient.GetReservationsByHotelAndDates(hotelId, initalDate, finalDate)
-
-	var roomsAvailable reservations_dto.RoomsAvailable
-	hotel_rooms := hotelClient.GetHotelById(hotelId).RoomsAvailable
-	roomsAvailable.Rooms = hotel_rooms - reservations
-
-	return roomsAvailable, nil
-}
-
-// En el archivo service/reservation_service.go
 
 func (s *reservationService) GetFilteredReservations(hotelID int, userID int, startDate string, endDate string) (reservations_dto.ReservationsDetailDto, error) {
 	// Realiza la lógica para filtrar las reservas según los parámetros proporcionados
@@ -218,4 +210,25 @@ func (s *reservationService) GetFilteredReservations(hotelID int, userID int, st
 	}
 
 	return reservationsDto, nil
+}
+
+func (s *reservationService) RoomsAvailableHotel(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.RoomsAvailable, e.ApiError) {
+	hotelId := reservationDto.HotelId
+	initialDate, _ := time.Parse(layout, reservationDto.InitialDate)
+	finalDate, _ := time.Parse(layout, reservationDto.FinalDate)
+
+	var maxReservations int
+	roomsAvailable := reservations_dto.RoomsAvailable{}
+	hotelRooms := hotelClient.GetHotelById(hotelId).RoomsAvailable
+
+	for date := initialDate; date.Before(finalDate); date = date.AddDate(0, 0, 1) {
+		reservations := reservationClient.GetReservationsByHotelAndDate(hotelId, date)
+		if reservations > maxReservations {
+			maxReservations = reservations
+		}
+	}
+
+	roomsAvailable.Rooms = hotelRooms - maxReservations
+
+	return roomsAvailable, nil
 }

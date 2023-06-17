@@ -60,6 +60,15 @@ func GetReservationsByHotelAndDates(idHotel int, initialDate time.Time, finalDat
 	return count
 }
 
+func GetReservationsByHotelAndDate(idHotel int, date time.Time) int {
+	var count int
+	Db.Model(&model.Reservation{}).Where("hotel_id = ? AND initial_date <= ? AND ? < final_date", idHotel, date, date).Count(&count)
+	//                                                           initial_date <= date < final_date
+	//log.Debug("Reservation Count: ", count)
+
+	return count
+}
+
 func InsertReservation(reservation model.Reservation) model.Reservation {
 	result := Db.Create(&reservation)
 
