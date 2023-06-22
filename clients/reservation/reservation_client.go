@@ -11,7 +11,31 @@ import (
 
 var Db *gorm.DB
 
-func GetReservationById(id int) model.Reservation {
+type ReservationClientInterface interface {
+	InsertReservation(reservation model.Reservation) model.Reservation
+	GetReservationsByUser(idUser int) model.Reservations
+	GetReservationsByHotel(idHotel int) model.Reservations
+	GetReservationsByHotelAndDates(idHotel int, initialDate time.Time, finalDate time.Time) int
+	GetReservationsByHotelAndDate(idHotel int, date time.Time) int
+	GetReservationById(id int) model.Reservation
+}
+
+var (
+	MyClient ReservationClientInterface
+)
+
+type ProductionClient struct{}
+
+func (ReservationClientInterface ProductionClient) GetReservationsByHotelAndDate(idHotel int, date time.Time) int {
+	var count int
+	Db.Model(&model.Reservation{}).Where("hotel_id = ? AND initial_date <= ? AND ? < final_date", idHotel, date, date).Count(&count)
+	//                                                           initial_date <= date < final_date
+	//log.Debug("Reservation Count: ", count)
+
+	return count
+}
+
+func (ReservationClientInterface ProductionClient) GetReservationById(id int) model.Reservation {
 	var reservation model.Reservation
 
 	Db.Where("id = ?", id).Preload("Hotel").Preload("User").First(&reservation)
@@ -31,7 +55,7 @@ func GetReservations() model.Reservations {
 	return reservations
 }
 
-func GetReservationsByUser(idUser int) model.Reservations {
+func (ReservationClientInterface ProductionClient) GetReservationsByUser(idUser int) model.Reservations {
 	var reservations model.Reservations
 	//Db.Preload("Address").Find(&users)
 	Db.Where("user_id = ?", idUser).Preload("Hotel").Preload("User").Find(&reservations)
@@ -41,7 +65,7 @@ func GetReservationsByUser(idUser int) model.Reservations {
 	return reservations
 }
 
-func GetReservationsByHotel(idHotel int) model.Reservations {
+func (ReservationClient ProductionClient) GetReservationsByHotel(idHotel int) model.Reservations {
 	var reservations model.Reservations
 	//Db.Preload("Address").Find(&users)
 	Db.Where("id_hotel = ?", idHotel).Preload("Hotel").Preload("User").Find(&reservations)
@@ -51,7 +75,7 @@ func GetReservationsByHotel(idHotel int) model.Reservations {
 	return reservations
 }
 
-func GetReservationsByHotelAndDates(idHotel int, initialDate time.Time, finalDate time.Time) int {
+func (ReservationClientInterface ProductionClient) GetReservationsByHotelAndDates(idHotel int, initialDate time.Time, finalDate time.Time) int {
 	var count int
 	Db.Model(&model.Reservation{}).Where("hotel_id = ? AND ? < final_date AND ? >= initial_date", idHotel, initialDate, finalDate).Preload("Hotel").Preload("User").Count(&count)
 
@@ -60,16 +84,7 @@ func GetReservationsByHotelAndDates(idHotel int, initialDate time.Time, finalDat
 	return count
 }
 
-func GetReservationsByHotelAndDate(idHotel int, date time.Time) int {
-	var count int
-	Db.Model(&model.Reservation{}).Where("hotel_id = ? AND initial_date <= ? AND ? < final_date", idHotel, date, date).Count(&count)
-	//                                                           initial_date <= date < final_date
-	//log.Debug("Reservation Count: ", count)
-
-	return count
-}
-
-func InsertReservation(reservation model.Reservation) model.Reservation {
+func (ReservationClientInterface ProductionClient) InsertReservation(reservation model.Reservation) model.Reservation {
 	result := Db.Create(&reservation)
 
 	if result.Error != nil {
