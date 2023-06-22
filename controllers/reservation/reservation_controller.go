@@ -1,6 +1,8 @@
 package reservationController
 
 import (
+	hotelClient "mvc-go/clients/hotel"
+	reservationClient "mvc-go/clients/reservation"
 	"mvc-go/controllers"
 	"mvc-go/dto/reservations_dto"
 	service "mvc-go/services"
@@ -31,7 +33,7 @@ func GetReservationById(c *gin.Context) {
 
 	id, _ := strconv.Atoi(c.Param("id"))
 	var reservationDetailDto reservations_dto.ReservationDetailDto
-
+	hotelClient.MyClient = hotelClient.ProductionClient{}
 	reservationDetailDto, err := service.ReservationService.GetReservationById(id)
 
 	if err != nil {
@@ -228,6 +230,7 @@ func InsertReservation(c *gin.Context) {
 	reservationCreateDto.UserId = userID
 
 	var reservationDetailDto reservations_dto.ReservationDetailDto
+	hotelClient.MyClient = hotelClient.ProductionClient{}
 	reservationDetailDto, er := service.ReservationService.InsertReservation(reservationCreateDto)
 	// Error del Insert
 	if er != nil {
@@ -246,6 +249,8 @@ func RoomsAvailable(c *gin.Context) {
 	initialDate := params.Get("initial_date")
 	finalDate := params.Get("final_date")
 
+	reservationClient.MyClient = reservationClient.ProductionClient{}
+	hotelClient.MyClient = hotelClient.ProductionClient{}
 	roomsAvailable, err := service.ReservationService.RoomsAvailable(initialDate, finalDate)
 	if err != nil {
 		c.JSON(err.Status(), err)

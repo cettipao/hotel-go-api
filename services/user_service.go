@@ -114,7 +114,7 @@ func (s *userService) InsertUser(userDto users_dto.UserDtoRegister) (users_dto.U
 
 func (s *userService) UserLogin(userDto users_dto.UserLoginDto) (users_dto.UserLoginResponseDto, e.ApiError) {
 	var loginResponse users_dto.UserLoginResponseDto
-	user := userCliente.GetUserByEmail(userDto.Email)
+	user := userCliente.MyClient.GetUserByEmail(userDto.Email)
 	if user.Id == 0 {
 		return loginResponse, e.NewBadRequestApiError("User not found")
 	}
@@ -132,6 +132,6 @@ func (s *userService) UserLogin(userDto users_dto.UserLoginDto) (users_dto.UserL
 }
 
 func (s *userService) IsEmailTaken(email string) bool {
-	user := userCliente.GetUserByEmail(email)
+	user := userCliente.MyClient.GetUserByEmail(email)
 	return user.Id != 0
 }

@@ -30,7 +30,7 @@ func init() {
 
 func (s *hotelService) GetHotelById(id int) (hotels_dto.HotelDto, e.ApiError) {
 
-	var hotel = hotelCliente.GetHotelById(id)
+	var hotel = hotelCliente.MyClient.GetHotelById(id)
 	var hotelDto hotels_dto.HotelDto
 
 	if hotel.Id == 0 {
@@ -77,7 +77,7 @@ func (s *hotelService) DeleteHotelById(id int) e.ApiError {
 }
 
 func (s *hotelService) GetHotels() (hotels_dto.HotelsDto, e.ApiError) {
-	var hotels model.Hotels = hotelCliente.GetHotels()
+	var hotels model.Hotels = hotelCliente.MyClient.GetHotels()
 	hotelsList := make([]hotels_dto.HotelDto, 0)
 
 	for _, hotel := range hotels {
@@ -140,7 +140,7 @@ func (s *hotelService) UpdateHotel(hotelDto hotels_dto.HotelDto, id int) (hotels
 
 func (s *hotelService) AddAmenitieToHotel(hotelID, amenitieID int) e.ApiError {
 	// Obtener el hotel por su ID
-	hotel := hotelCliente.GetHotelById(hotelID)
+	hotel := hotelCliente.MyClient.GetHotelById(hotelID)
 	if hotel.Id == 0 {
 		return e.NewNotFoundApiError("Hotel not found")
 	}
@@ -167,7 +167,7 @@ func (s *hotelService) AddAmenitieToHotel(hotelID, amenitieID int) e.ApiError {
 
 func (s *hotelService) RemoveAmenitieToHotel(hotelID, amenitieID int) e.ApiError {
 	// Obtener el hotel por su ID
-	hotel := hotelCliente.GetHotelById(hotelID)
+	hotel := hotelCliente.MyClient.GetHotelById(hotelID)
 	if hotel.Id == 0 {
 		return e.NewNotFoundApiError("Hotel not found")
 	}

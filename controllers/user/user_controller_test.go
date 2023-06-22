@@ -1,216 +1,247 @@
 package userController
 
 import (
-	userClient "mvc-go/clients/user"
-	"mvc-go/controllers"
+	"encoding/json"
+	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 	"mvc-go/dto/users_dto"
 	service "mvc-go/services"
+	"mvc-go/services/login"
+	e "mvc-go/utils/errors"
 	"net/http"
-	"strconv"
-
-	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
+	"net/http/httptest"
+	"strings"
+	"testing"
 )
 
-func GetUserById(c *gin.Context) {
-	controllers.TokenVerification()(c)
-	// Verificar si ocurrió un error durante la verificación del token
-	if err := c.Errors.Last(); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-	// Obtener el ID del usuario del contexto
-	userID := c.GetInt("user_id")
-	//Verificar si es admin
-	if !controllers.IsAdmin(userID) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
-		return
-	}
+func TestLogin(t *testing.T) {
+	service.UserService = &TestUser{}
+	// Crear un enrutador Gin
+	router := gin.Default()
 
-	log.Debug("User id to load: " + c.Param("id"))
+	// Ruta de ejemplo que ejecuta la función RoomsAvailable
+	router.POST("/login", UserLogin)
 
-	id, _ := strconv.Atoi(c.Param("id"))
-	var userDto users_dto.UserDetailDto
+	// Crear una solicitud HTTP de tipo POST al endpoint /reservation con el cuerpo JSON
+	jsonStr := `{
+    "email":"test@test.com",
+    "password":"test"
+}`
+	reqBody := strings.NewReader(jsonStr)
+	req, _ := http.NewRequest("POST", "/login", reqBody)
 
-	userDto, err := service.UserService.GetUserById(id)
+	// Establecer el encabezado de autenticación con un token válido
+	//token, _ := login.GenerateToken(0, "test@test.com")
+	//req.Header.Set("Authorization", "Bearer "+token)
 
-	if err != nil {
-		c.JSON(err.Status(), err)
-		return
-	}
-	c.JSON(http.StatusOK, userDto)
-}
+	// Crear un registrador de respuestas HTTP simulado
+	resp := httptest.NewRecorder()
 
-func DeleteUserById(c *gin.Context) {
-	controllers.TokenVerification()(c)
-	// Verificar si ocurrió un error durante la verificación del token
-	if err := c.Errors.Last(); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-	// Obtener el ID del usuario del contexto
-	userID := c.GetInt("user_id")
-	//Verificar si es admin
-	if !controllers.IsAdmin(userID) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
-		return
-	}
+	// Enviar la solicitud al enrutador Gin y capturar la respuesta
+	router.ServeHTTP(resp, req)
 
-	log.Debug("User id to load: " + c.Param("id"))
+	// Verificar el código de estado de la respuesta
+	assert.Equal(t, http.StatusCreated, resp.Code)
 
-	id, _ := strconv.Atoi(c.Param("id"))
-	var userDto users_dto.UserDetailDto
+	jsonResponse := resp.Body.Bytes()
 
-	err := service.UserService.DeleteUserById(id)
-
-	if err != nil {
-		c.JSON(err.Status(), err)
-		return
-	}
-	c.JSON(http.StatusOK, userDto)
-}
-
-func GetUsers(c *gin.Context) {
-	controllers.TokenVerification()(c)
-	// Verificar si ocurrió un error durante la verificación del token
-	if err := c.Errors.Last(); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-	// Obtener el ID del usuario del contexto
-	userID := c.GetInt("user_id")
-	//Verificar si es admin
-	if !controllers.IsAdmin(userID) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Debes tener permisos de administrador para realizar esta accion"})
-		return
-	}
-
-	var usersDto users_dto.UsersDto
-	usersDto, err := service.UserService.GetUsers()
-
-	if err != nil {
-		c.JSON(err.Status(), err)
-		return
-	}
-
-	c.JSON(http.StatusOK, usersDto)
-}
-
-func UpdateUserById(c *gin.Context) {
-	var userDto users_dto.UserDtoRegister
-	err := c.BindJSON(&userDto)
-
-	// Error Parsing json param
-	if err != nil {
-		log.Error(err.Error())
-		c.JSON(http.StatusBadRequest, err.Error())
-		return
-	}
-
-	// Verificar si alguno de los campos está vacío
-	if controllers.IsEmptyField(userDto.Name) || controllers.IsEmptyField(userDto.LastName) ||
-		controllers.IsEmptyField(userDto.Email) || controllers.IsEmptyField(userDto.Dni) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Uno o varios de los campos obligatorios esta vacio o no se envio"})
-		return
-	}
-
-	log.Debug("User id to load: " + c.Param("id"))
-
-	id, _ := strconv.Atoi(c.Param("id"))
-
-	er := service.UserService.UpdateUser(userDto, id)
-	// Error del Insert
-	if er != nil {
-		c.JSON(er.Status(), er)
-		return
-	}
-
-	c.JSON(http.StatusCreated, "Usuario Modificado con exito")
-}
-
-func UserInsert(c *gin.Context) {
-	var userDto users_dto.UserDtoRegister
-	err := c.BindJSON(&userDto)
-
-	// Error Parsing json param
-	if err != nil {
-		log.Error(err.Error())
-		c.JSON(http.StatusBadRequest, err.Error())
-		return
-	}
-
-	// Verificar si alguno de los campos está vacío
-	if controllers.IsEmptyField(userDto.Name) || controllers.IsEmptyField(userDto.LastName) ||
-		controllers.IsEmptyField(userDto.Email) || controllers.IsEmptyField(userDto.Dni) ||
-		controllers.IsEmptyField(userDto.Password) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Uno o varios de los campos obligatorios esta vacio o no se envio"})
-		return
-	}
-
-	// Verificar si el email ya existe
-	if service.UserService.IsEmailTaken(userDto.Email) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "El Email ingresado ya se encuentra registrado"})
-		return
-	}
-
-	var userDetailDto users_dto.UserDetailDto
-	userDetailDto, er := service.UserService.InsertUser(userDto)
-	// Error del Insert
-	if er != nil {
-		c.JSON(er.Status(), er)
-		return
-	}
-
-	c.JSON(http.StatusCreated, userDetailDto)
-}
-
-func UserLogin(c *gin.Context) {
-	var userDto users_dto.UserLoginDto
-	err := c.BindJSON(&userDto)
-
-	// Error Parsing json param
-	if err != nil {
-		log.Error(err.Error())
-		c.JSON(http.StatusBadRequest, err.Error())
-		return
-	}
-
-	// Verificar si alguno de los campos está vacío
-	if controllers.IsEmptyField(userDto.Email) ||
-		controllers.IsEmptyField(userDto.Password) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Uno o varios de los campos obligatorios esta vacio o no se envio"})
-		return
-	}
-
+	// Convertir los datos en formato JSON a un objeto de tipo RoomsResponse
 	var loginResponse users_dto.UserLoginResponseDto
-	userClient.MyClient = userClient.ProductionClient{}
-	loginResponse, er := service.UserService.UserLogin(userDto)
-	// Error del Login
-	if er != nil {
-		c.JSON(er.Status(), er)
+	err := json.Unmarshal(jsonResponse, &loginResponse)
+	if err != nil {
+		fmt.Println("Error al convertir los datos JSON:", err)
 		return
 	}
+	assert.Equal(t, "token", loginResponse.Token)
 
-	c.JSON(http.StatusCreated, loginResponse)
 }
 
-func GetMyUser(c *gin.Context) {
-	controllers.TokenVerification()(c)
-	// Verificar si ocurrió un error durante la verificación del token
-	if err := c.Errors.Last(); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-		return
-	}
-	// Obtener el ID del usuario del contexto
-	userID := c.GetInt("user_id")
+func TestLoginNoPassword(t *testing.T) {
+	service.UserService = &TestUser{}
+	// Crear un enrutador Gin
+	router := gin.Default()
 
-	var userDto users_dto.UserDetailDto
+	// Ruta de ejemplo que ejecuta la función RoomsAvailable
+	router.POST("/login", UserLogin)
 
-	userDto, err := service.UserService.GetUserById(userID)
+	// Crear una solicitud HTTP de tipo POST al endpoint /reservation con el cuerpo JSON
+	jsonStr := `{
+    "email":"test@test.com"
+}`
+	reqBody := strings.NewReader(jsonStr)
+	req, _ := http.NewRequest("POST", "/login", reqBody)
 
+	// Establecer el encabezado de autenticación con un token válido
+	//token, _ := login.GenerateToken(0, "test@test.com")
+	//req.Header.Set("Authorization", "Bearer "+token)
+
+	// Crear un registrador de respuestas HTTP simulado
+	resp := httptest.NewRecorder()
+
+	// Enviar la solicitud al enrutador Gin y capturar la respuesta
+	router.ServeHTTP(resp, req)
+
+	// Verificar el código de estado de la respuesta
+	assert.Equal(t, 400, resp.Code)
+
+	// Convertir los datos en formato JSON
+	var loginResponse users_dto.UserLoginResponseDto
+	jsonResponse := resp.Body.Bytes()
+	err := json.Unmarshal(jsonResponse, &loginResponse)
 	if err != nil {
-		c.JSON(err.Status(), err)
+		fmt.Println("Error al convertir los datos JSON:", err)
 		return
 	}
-	c.JSON(http.StatusOK, userDto)
+	assert.Equal(t, 400, resp.Code)
+
+}
+
+func TestGetMyUser(t *testing.T) {
+	service.UserService = &TestUser{}
+	// Crear un enrutador Gin
+	router := gin.Default()
+
+	// Ruta de ejemplo que ejecuta la función RoomsAvailable
+	router.POST("/my-user", GetMyUser)
+
+	req, _ := http.NewRequest("POST", "/my-user", nil)
+
+	// Establecer el encabezado de autenticación con un token válido
+	token, _ := login.GenerateToken(0, "test@test.com")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	// Crear un registrador de respuestas HTTP simulado
+	resp := httptest.NewRecorder()
+
+	// Enviar la solicitud al enrutador Gin y capturar la respuesta
+	router.ServeHTTP(resp, req)
+
+	// Convertir los datos en formato JSON
+	jsonResponse := resp.Body.Bytes()
+	var userDetail users_dto.UserDetailDto
+	err := json.Unmarshal(jsonResponse, &userDetail)
+	if err != nil {
+		fmt.Println("Error al convertir los datos JSON:", err)
+		return
+	}
+	assert.Equal(t, "test@test.com", userDetail.Email)
+
+}
+
+func TestRegister(t *testing.T) {
+	service.UserService = &TestUser{}
+	// Crear un enrutador Gin
+	router := gin.Default()
+
+	// Ruta de ejemplo que ejecuta la función RoomsAvailable
+	router.POST("/register", UserInsert)
+
+	// Crear una solicitud HTTP de tipo POST al endpoint /reservation con el cuerpo JSON
+	jsonStr := `{
+    "name":"test",
+    "last_name":"test",
+    "email":"test@test.com",
+    "dni":"test",
+    "password":"test"
+}`
+	reqBody := strings.NewReader(jsonStr)
+	req, _ := http.NewRequest("POST", "/register", reqBody)
+
+	// Establecer el encabezado de autenticación con un token válido
+	//token, _ := login.GenerateToken(0, "test@test.com")
+	//req.Header.Set("Authorization", "Bearer "+token)
+
+	// Crear un registrador de respuestas HTTP simulado
+	resp := httptest.NewRecorder()
+
+	// Enviar la solicitud al enrutador Gin y capturar la respuesta
+	router.ServeHTTP(resp, req)
+
+	// Verificar el código de estado de la respuesta
+	assert.Equal(t, http.StatusCreated, resp.Code)
+
+	jsonResponse := resp.Body.Bytes()
+
+	// Convertir los datos en formato JSON a un objeto de tipo RoomsResponse
+	var registerResponse users_dto.UserDetailDto
+	err := json.Unmarshal(jsonResponse, &registerResponse)
+	if err != nil {
+		fmt.Println("Error al convertir los datos JSON:", err)
+		return
+	}
+	assert.Equal(t, "test", registerResponse.Name)
+
+}
+
+func TestRegisterNoPassword(t *testing.T) {
+	service.UserService = &TestUser{}
+	// Crear un enrutador Gin
+	router := gin.Default()
+
+	// Ruta de ejemplo que ejecuta la función RoomsAvailable
+	router.POST("/register", UserInsert)
+
+	// Crear una solicitud HTTP de tipo POST al endpoint /reservation con el cuerpo JSON
+	jsonStr := `{
+    "name":"test",
+    "last_name":"test",
+    "email":"test@test.com",
+    "dni":"test"
+}`
+	reqBody := strings.NewReader(jsonStr)
+	req, _ := http.NewRequest("POST", "/register", reqBody)
+
+	// Establecer el encabezado de autenticación con un token válido
+	//token, _ := login.GenerateToken(0, "test@test.com")
+	//req.Header.Set("Authorization", "Bearer "+token)
+
+	// Crear un registrador de respuestas HTTP simulado
+	resp := httptest.NewRecorder()
+
+	// Enviar la solicitud al enrutador Gin y capturar la respuesta
+	router.ServeHTTP(resp, req)
+
+	// Verificar el código de estado de la respuesta
+	assert.Equal(t, 400, resp.Code)
+
+}
+
+type TestUser struct {
+}
+
+func (testUser TestUser) GetUserById(id int) (users_dto.UserDetailDto, e.ApiError) {
+	return users_dto.UserDetailDto{
+		Name:     "test",
+		LastName: "test",
+		Dni:      "test",
+		Email:    "test@test.com",
+		Admin:    0,
+	}, nil
+}
+func (testUser TestUser) GetUsers() (users_dto.UsersDto, e.ApiError) {
+	return users_dto.UsersDto{}, nil
+}
+func (testUser TestUser) InsertUser(userDto users_dto.UserDtoRegister) (users_dto.UserDetailDto, e.ApiError) {
+	return users_dto.UserDetailDto{
+		Name:     "test",
+		LastName: "test",
+		Dni:      "test",
+		Email:    "test@test.com",
+		Admin:    0,
+	}, nil
+}
+func (testUser TestUser) UserLogin(userDto users_dto.UserLoginDto) (users_dto.UserLoginResponseDto, e.ApiError) {
+	return users_dto.UserLoginResponseDto{
+		Token: "token",
+	}, nil
+}
+func (testUser TestUser) IsEmailTaken(email string) bool {
+	return false
+}
+func (testUser TestUser) DeleteUserById(id int) e.ApiError {
+	return nil
+}
+func (testUser TestUser) UpdateUser(userDto users_dto.UserDtoRegister, id int) e.ApiError {
+	return nil
 }

@@ -1,106 +1,84 @@
 package clients
 
 import (
-	"errors"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"mvc-go/model"
-	e "mvc-go/utils/errors"
+	"testing"
 )
 
-var Db *gorm.DB
+func init() {
+	// DB Connections Paramters
+	DBName := "hotel"
+	DBUser := "cetti"
+	DBPass := "123456"
+	//DBPass := os.Getenv("MVC_DB_PASS")
+	DBHost := "localhost"
+	// ------------------------
 
-type HotelClientInterface interface {
-	GetHotels() model.Hotels
-	GetHotelById(id int) model.Hotel
-}
+	db, err := gorm.Open("mysql", DBUser+":"+DBPass+"@tcp("+DBHost+":3306)/"+DBName+"?charset=utf8&parseTime=True")
 
-var (
-	MyClient HotelClientInterface
-)
-
-type ProductionClient struct{}
-
-func (HotelClientInterface ProductionClient) GetHotelById(id int) model.Hotel {
-	var hotel model.Hotel
-
-	//Db.Where("id = ?", id).Preload("Address").Preload("Telephones").First(&users_dto)
-	Db.Where("id = ?", id).Preload("Amenities").Preload("Images").First(&hotel)
-	log.Debug("Hotel: ", hotel)
-
-	return hotel
-}
-
-func (HotelClientInterface ProductionClient) GetHotels() model.Hotels {
-	var hotels model.Hotels
-	//Db.Preload("Address").Find(&users)
-	Db.Preload("Amenities").Preload("Images").Find(&hotels)
-
-	log.Debug("Hotels: ", hotels)
-
-	return hotels
-}
-
-func InsertHotel(hotel model.Hotel) model.Hotel {
-	result := Db.Create(&hotel)
-
-	if result.Error != nil {
-		//TODO Manage Errors
-		log.Error("")
-	}
-	log.Debug("Hotel Created: ", hotel.Id)
-	return hotel
-}
-
-func DeleteHotelById(id int) e.ApiError {
-	// Obtén el hotel por su ID antes de eliminarlo
-	var hotel model.Hotel
-	if err := Db.First(&hotel, id).Error; err != nil {
-		// Maneja el error de búsqueda del hotel según sea necesario
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return e.NewBadRequestApiError("Hotel not found")
-		}
-		return e.NewBadRequestApiError("Failed to delete hotel")
-	}
-
-	// Elimina el hotel por su ID
-	if err := Db.Delete(&hotel).Error; err != nil {
-		// Maneja el error de eliminación del hotel según sea necesario
-		return e.NewBadRequestApiError("Failed to delete hotel")
-	}
-
-	return nil // Sin errores, se eliminó el hotel correctamente
-}
-
-func UpdateHotel(hotel model.Hotel) e.ApiError {
-	err := Db.Save(&hotel)
 	if err != nil {
-		//TODO Manage Errors
-		log.Error(err)
-		return e.NewBadRequestApiError("Failed to delete hotel amenities")
+		log.Info("Connection Failed to Open")
+		log.Fatal(err)
+	} else {
+		log.Info("Connection Established")
 	}
-	log.Debug("Hotel Updated: ", hotel.Id)
-	return nil
+
+	// Realizar las migraciones necesarias para crear las tablas en la base de datos
+	db.AutoMigrate(&model.Hotel{})
+
+	// Asignar la base de datos inicializada al cliente
+	Db = db
+
+	// Asignar el cliente de producción al cliente actual
+	MyClient = ProductionClient{}
 }
 
-func IsAmenitieAlreadyLinked(hotelID, amenitieID int) bool {
-	var count int
-	err := Db.Table("hotel_amenities").
-		Where("hotel_id = ? AND amenitie_id = ?", hotelID, amenitieID).
-		Count(&count).
-		Error
+func TestGetHotelById(t *testing.T) {
+	// Obtener el hotel con ID 1
+	hotel := MyClient.GetHotelById(1)
 
-	return err == nil && count > 0
+	// Verificar que se obtenga el hotel correcto
+	assert.Equal(t, 1, hotel.Id)
+
+	// Obtener un hotel inexistente con ID 5000
+	hotel = MyClient.GetHotelById(5000)
+
+	// Verificar que se obtenga un hotel vacío
+	assert.Equal(t, model.Hotel{}, hotel)
 }
 
-func DeleteLinkAmenitieHotel(hotelID int, amenitieID int) bool {
-	// Eliminar la fila que vincula el hotel y la amenidad en "hotel_amenities"
-	result := Db.Table("hotel_amenities").
-		Where("hotel_id = ? AND amenitie_id = ?", hotelID, amenitieID).
-		Delete(nil)
-	if result.Error != nil {
-		// Manejar el error en caso de que ocurra
-		return false
+func TestGetHotels(t *testing.T) {
+	// Obtener todos los hoteles
+	hotels := MyClient.GetHotels()
+
+	// Verificar que se obtenga al menos un hotel
+	assert.NotEmpty(t, hotels)
+
+	// Obtener el número total de hoteles en la base de datos
+	var totalHotels int
+	Db.Model(&model.Hotel{}).Count(&totalHotels)
+
+	// Verificar que se obtengan todos los hoteles
+	assert.Equal(t, totalHotels, len(hotels))
+}
+
+func TestInsertHotel(t *testing.T) {
+	// Crear un nuevo hotel
+	hotel := model.Hotel{
+		Name: "Hotel Example",
 	}
-	return true
+
+	// Insertar el hotel en la base de datos
+	insertedHotel := InsertHotel(hotel)
+
+	// Verificar que el hotel tenga un ID asignado
+	assert.Equal(t, "Hotel Example", insertedHotel.Name)
+	assert.NotZero(t, insertedHotel.Id)
+
+	//Eliminar el hotel
+	DeleteHotelById(insertedHotel.Id)
 }

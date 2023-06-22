@@ -2,6 +2,7 @@ package userController
 
 import (
 	clients "mvc-go/clients/hotel"
+	hotelClient "mvc-go/clients/hotel"
 	"mvc-go/controllers"
 	"mvc-go/dto/hotels_dto"
 	service "mvc-go/services"
@@ -17,7 +18,7 @@ func GetHotelById(c *gin.Context) {
 
 	id, _ := strconv.Atoi(c.Param("id"))
 	var hotelDto hotels_dto.HotelDto
-
+	hotelClient.MyClient = hotelClient.ProductionClient{}
 	hotelDto, err := service.HotelService.GetHotelById(id)
 
 	if err != nil {
@@ -110,6 +111,7 @@ func DeleteHotelById(c *gin.Context) {
 
 func GetHotels(c *gin.Context) {
 	var hotelsDto hotels_dto.HotelsDto
+	hotelClient.MyClient = hotelClient.ProductionClient{}
 	hotelsDto, err := service.HotelService.GetHotels()
 
 	if err != nil {

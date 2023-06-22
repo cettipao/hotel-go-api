@@ -1,87 +1,84 @@
 package clients
 
 import (
-	"errors"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	"mvc-go/model"
-	e "mvc-go/utils/errors"
+	"testing"
 )
 
-var Db *gorm.DB
+func init() {
+	// DB Connections Paramters
+	DBName := "hotel"
+	DBUser := "cetti"
+	DBPass := "123456"
+	//DBPass := os.Getenv("MVC_DB_PASS")
+	DBHost := "localhost"
+	// ------------------------
 
-type UserClientInterface interface {
-	GetUserByEmail(email string) model.User
-}
+	db, err := gorm.Open("mysql", DBUser+":"+DBPass+"@tcp("+DBHost+":3306)/"+DBName+"?charset=utf8&parseTime=True")
 
-var (
-	MyClient UserClientInterface
-)
-
-type ProductionClient struct{}
-
-func GetUserById(id int) model.User {
-	var user model.User
-
-	//Db.Where("id = ?", id).Preload("Address").Preload("Telephones").First(&users_dto)
-	Db.Where("id = ?", id).Preload("Reservations").First(&user)
-	log.Debug("User: ", user)
-
-	return user
-}
-
-func (UserClientInterface ProductionClient) GetUserByEmail(email string) model.User {
-	var user model.User
-
-	Db.Where("email = ?", email).First(&user)
-	log.Debug("User: ", user)
-
-	return user
-}
-
-func GetUsers() model.Users {
-	var users model.Users
-	//Db.Preload("Address").Find(&users)
-	Db.Find(&users)
-
-	log.Debug("Users: ", users)
-
-	return users
-}
-
-func InsertUser(user model.User) model.User {
-	result := Db.Create(&user)
-
-	if result.Error != nil {
-		//TODO Manage Errors
-		log.Error("")
-	}
-	log.Debug("User Created: ", user.Id)
-	return user
-}
-
-func DeleteUserById(id int) e.ApiError {
-	// Obtén el hotel por su ID antes de eliminarlo
-	var user model.User
-	if err := Db.First(&user, id).Error; err != nil {
-		// Maneja el error de búsqueda del hotel según sea necesario
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return e.NewBadRequestApiError("Reservation not user")
-		}
-		return e.NewBadRequestApiError("Failed to delete user")
+	if err != nil {
+		log.Info("Connection Failed to Open")
+		log.Fatal(err)
+	} else {
+		log.Info("Connection Established")
 	}
 
-	if err := Db.Delete(&user).Error; err != nil {
-		// Maneja el error de eliminación del hotel según sea necesario
-		return e.NewBadRequestApiError("Failed to delete user")
-	}
+	// Realizar las migraciones necesarias para crear las tablas en la base de datos
+	db.AutoMigrate(&model.User{}, &model.Reservation{})
 
-	return nil // Sin errores, se eliminó el hotel correctamente
+	// Asignar la base de datos inicializada al cliente
+	Db = db
 }
 
-func UpdateUser(user model.User) e.ApiError {
-	log.Debug(user)
-	Db.Save(&user)
-	log.Debug("user Updated: ", user.Id)
-	return nil
+func TestGetUserById(t *testing.T) {
+
+	// Obtener el usuario con ID 1
+	user := GetUserById(1)
+
+	// Verificar que se obtenga el usuario correcto
+	assert.Equal(t, 1, user.Id)
+
+	// Obtener un usuario inexistente con ID 5000
+	user = GetUserById(5000)
+
+	// Verificar que se obtenga un usuario vacío
+	assert.Equal(t, model.User{}, user)
+}
+
+func TestGetUserByEmail(t *testing.T) {
+	MyClient = ProductionClient{}
+	// Obtener el usuario con el correo electrónico "john@example.com"
+	user := MyClient.GetUserByEmail("test@test.com")
+
+	// Verificar que se obtenga el usuario correcto
+	assert.Equal(t, "test@test.com", user.Email)
+
+	// Obtener un usuario inexistente con otro correo electrónico
+	user = MyClient.GetUserByEmail("non@non.com")
+
+	// Verificar que se obtenga un usuario vacío
+	assert.Equal(t, model.User{}, user)
+}
+
+func TestInsertUser(t *testing.T) {
+
+	// Crear un nuevo usuario
+	user := model.User{
+		Name:  "Jane Smith",
+		Email: "example@example.com",
+	}
+
+	// Insertar el usuario en la base de datos
+	insertedUser := InsertUser(user)
+
+	// Verificar que el usuario tenga un ID asignado
+	assert.Equal(t, "Jane Smith", insertedUser.Name)
+	assert.Equal(t, "example@example.com", insertedUser.Email)
+
+	//Eliminar el usuario
+	DeleteUserById(insertedUser.Id)
 }

@@ -33,7 +33,7 @@ func init() {
 
 func (s *reservationService) GetReservationById(id int) (reservations_dto.ReservationDetailDto, e.ApiError) {
 
-	var reservation model.Reservation = reservationClient.GetReservationById(id)
+	var reservation = reservationClient.MyClient.GetReservationById(id)
 	var reservationDetailDto reservations_dto.ReservationDetailDto
 
 	if reservation.Id == 0 {
@@ -97,7 +97,7 @@ func (s *reservationService) InsertReservation(reservationDto reservations_dto.R
 	parsedTime, _ = time.Parse(layout, reservationDto.FinalDate)
 	reservation.FinalDate = parsedTime
 
-	reservation = reservationClient.InsertReservation(reservation)
+	reservation = reservationClient.MyClient.InsertReservation(reservation)
 
 	reservationDetailDto, _ = s.GetReservationById(reservation.Id)
 
@@ -108,7 +108,7 @@ func (s *reservationService) RoomsAvailable(initialDate string, finalDate string
 	var response reservations_dto.RoomsResponse
 
 	// Obtener todos los hoteles
-	hotels := hotelClient.GetHotels()
+	hotels := hotelClient.MyClient.GetHotels()
 
 	// Iterar sobre cada hotel y obtener las habitaciones disponibles
 	for _, hotel := range hotels {
@@ -119,10 +119,10 @@ func (s *reservationService) RoomsAvailable(initialDate string, finalDate string
 		finalDate, _ := time.Parse(layout, finalDate)
 
 		var maxReservations int
-		hotelRooms := hotelClient.GetHotelById(hotelId).RoomsAvailable
+		hotelRooms := hotelClient.MyClient.GetHotelById(hotelId).RoomsAvailable
 
 		for date := initialDate; date.Before(finalDate); date = date.AddDate(0, 0, 1) {
-			reservations := reservationClient.GetReservationsByHotelAndDate(hotelId, date)
+			reservations := reservationClient.MyClient.GetReservationsByHotelAndDate(hotelId, date)
 			if reservations > maxReservations {
 				maxReservations = reservations
 			}
@@ -219,10 +219,10 @@ func (s *reservationService) RoomsAvailableHotel(reservationDto reservations_dto
 
 	var maxReservations int
 	roomsAvailable := reservations_dto.RoomsAvailable{}
-	hotelRooms := hotelClient.GetHotelById(hotelId).RoomsAvailable
+	hotelRooms := hotelClient.MyClient.GetHotelById(hotelId).RoomsAvailable
 
 	for date := initialDate; date.Before(finalDate); date = date.AddDate(0, 0, 1) {
-		reservations := reservationClient.GetReservationsByHotelAndDate(hotelId, date)
+		reservations := reservationClient.MyClient.GetReservationsByHotelAndDate(hotelId, date)
 		if reservations > maxReservations {
 			maxReservations = reservations
 		}

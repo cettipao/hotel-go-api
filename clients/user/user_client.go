@@ -10,6 +10,16 @@ import (
 
 var Db *gorm.DB
 
+type UserClientInterface interface {
+	GetUserByEmail(email string) model.User
+}
+
+var (
+	MyClient UserClientInterface
+)
+
+type ProductionClient struct{}
+
 func GetUserById(id int) model.User {
 	var user model.User
 
@@ -20,7 +30,7 @@ func GetUserById(id int) model.User {
 	return user
 }
 
-func GetUserByEmail(email string) model.User {
+func (UserClientInterface ProductionClient) GetUserByEmail(email string) model.User {
 	var user model.User
 
 	Db.Where("email = ?", email).First(&user)

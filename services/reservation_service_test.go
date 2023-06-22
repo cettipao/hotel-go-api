@@ -1,234 +1,90 @@
 package services
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 	hotelClient "mvc-go/clients/hotel"
 	reservationClient "mvc-go/clients/reservation"
 	"mvc-go/dto/reservations_dto"
 	"mvc-go/model"
-	e "mvc-go/utils/errors"
+	"testing"
 	"time"
 )
 
-type reservationService struct{}
-
-type reservationServiceInterface interface {
-	GetReservationById(id int) (reservations_dto.ReservationDetailDto, e.ApiError)
-	DeleteReservationById(id int) e.ApiError
-	GetReservations() (reservations_dto.ReservationsDetailDto, e.ApiError)
-	InsertReservation(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.ReservationDetailDto, e.ApiError)
-	RoomsAvailable(initialDate string, finalDate string) (reservations_dto.RoomsResponse, e.ApiError)
-	RoomsAvailableHotel(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.RoomsAvailable, e.ApiError)
-	GetFilteredReservations(hotelID int, userID int, startDate string, endDate string) (reservations_dto.ReservationsDetailDto, error)
+type TestReservations struct {
 }
 
-var (
-	ReservationService reservationServiceInterface
-	layout             = "02/01/2006"
-)
-
-func init() {
-	ReservationService = &reservationService{}
+func (testReservations TestReservations) GetReservationsByHotelAndDate(idHotel int, date time.Time) int {
+	return 4
 }
 
-func (s *reservationService) GetReservationById(id int) (reservations_dto.ReservationDetailDto, e.ApiError) {
+func (testReservations TestReservations) InsertReservation(reservation model.Reservation) model.Reservation {
+	reservationCreated := model.Reservation{
+		Id:          1,
+		InitialDate: reservation.InitialDate,
+		FinalDate:   reservation.FinalDate,
+		User:        reservation.User,
+		UserId:      reservation.UserId,
+		Hotel:       reservation.Hotel,
+		HotelId:     reservation.HotelId,
+	}
+	return reservationCreated
+}
 
-	var reservation model.Reservation = reservationClient.GetReservationById(id)
-	var reservationDetailDto reservations_dto.ReservationDetailDto
-
-	if reservation.Id == 0 {
-		return reservationDetailDto, e.NewBadRequestApiError("reservations_dto not found")
+func (testReservations TestReservations) GetReservationById(id int) model.Reservation {
+	parsedTime, _ := time.Parse(layout, "01/01/2023")
+	reservation := model.Reservation{
+		Id:          id,
+		InitialDate: parsedTime,
+		FinalDate:   parsedTime,
+		User:        model.User{},
+		UserId:      0,
+		Hotel:       model.Hotel{},
+		HotelId:     0,
 	}
 
-	reservationDetailDto.Id = reservation.Id
-	reservationDetailDto.UserName = reservation.User.Name
-	reservationDetailDto.InitialDate = reservation.InitialDate.Format(layout)
-	reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
-	reservationDetailDto.UserLastName = reservation.User.LastName
-	reservationDetailDto.UserDni = reservation.User.Dni
-	reservationDetailDto.UserEmail = reservation.User.Email
-	reservationDetailDto.HotelName = reservation.Hotel.Name
-	reservationDetailDto.HotelDescription = reservation.Hotel.Description
-
-	return reservationDetailDto, nil
+	return reservation
 }
 
-func (s *reservationService) DeleteReservationById(id int) e.ApiError {
-
-	err := reservationClient.DeleteReservationById(id)
-	if err != nil {
-		return err
+func TestInsertReservation(t *testing.T) {
+	//prepare
+	reservation := reservations_dto.ReservationCreateDto{
+		UserId:      1,
+		HotelId:     123,
+		InitialDate: "01/01/2023",
+		FinalDate:   "01/01/2023",
 	}
+	reservationClient.MyClient = TestReservations{}
+
+	//act
+	reservationCreated, _ := ReservationService.InsertReservation(reservation)
+
+	//assert
+	assert.Equal(t, 1, reservationCreated.Id)
+	assert.Equal(t, reservation.InitialDate, reservationCreated.InitialDate)
+
+}
+
+func TestRoomsAvailable(t *testing.T) {
+	//prepare
+	initialDate := "01/01/2023"
+	finalDate := "15/01/2023"
+	reservationClient.MyClient = TestReservations{}
+	hotelClient.MyClient = TestHotels{}
+
+	//act
+	roomsAvailable, _ := ReservationService.RoomsAvailable(initialDate, finalDate)
+
+	//assert
+	assert.Equal(t, 6, roomsAvailable.Rooms[0].RoomsAvailable)
+	assert.Equal(t, 6, roomsAvailable.Rooms[1].RoomsAvailable)
+}
+
+func (testReservations TestReservations) GetReservationsByUser(idUser int) model.Reservations {
 	return nil
 }
-
-func (s *reservationService) GetReservations() (reservations_dto.ReservationsDetailDto, e.ApiError) {
-	var reservations = reservationClient.GetReservations()
-	var reservationsDetailDto reservations_dto.ReservationsDetailDto
-	reservationsDetailDto.Reservations = []reservations_dto.ReservationDetailDto{}
-
-	for _, reservation := range reservations {
-		var reservationDetailDto reservations_dto.ReservationDetailDto
-		reservationDetailDto.Id = reservation.Id
-		reservationDetailDto.UserName = reservation.User.Name
-		reservationDetailDto.UserLastName = reservation.User.LastName
-		reservationDetailDto.UserDni = reservation.User.Dni
-		reservationDetailDto.UserEmail = reservation.User.Email
-		reservationDetailDto.HotelName = reservation.Hotel.Name
-		reservationDetailDto.HotelDescription = reservation.Hotel.Description
-		reservationDetailDto.InitialDate = reservation.InitialDate.Format(layout)
-		reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
-
-		reservationsDetailDto.Reservations = append(reservationsDetailDto.Reservations, reservationDetailDto)
-	}
-
-	return reservationsDetailDto, nil
+func (testReservations TestReservations) GetReservationsByHotel(idHotel int) model.Reservations {
+	return nil
 }
-
-func (s *reservationService) InsertReservation(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.ReservationDetailDto, e.ApiError) {
-
-	var reservation model.Reservation
-	var reservationDetailDto reservations_dto.ReservationDetailDto
-
-	reservation.HotelId = reservationDto.HotelId
-	reservation.UserId = reservationDto.UserId
-	parsedTime, _ := time.Parse(layout, reservationDto.InitialDate)
-	reservation.InitialDate = parsedTime
-	parsedTime, _ = time.Parse(layout, reservationDto.FinalDate)
-	reservation.FinalDate = parsedTime
-
-	reservation = reservationClient.InsertReservation(reservation)
-
-	reservationDetailDto, _ = s.GetReservationById(reservation.Id)
-
-	return reservationDetailDto, nil
-}
-
-func (s *reservationService) RoomsAvailable(initialDate string, finalDate string) (reservations_dto.RoomsResponse, e.ApiError) {
-	var response reservations_dto.RoomsResponse
-
-	// Obtener todos los hoteles
-	hotels := hotelClient.GetHotels()
-
-	// Iterar sobre cada hotel y obtener las habitaciones disponibles
-	for _, hotel := range hotels {
-		hotelId := hotel.Id
-
-		// Obtener las reservas para el hotel y las fechas dadas
-		initialDate, _ := time.Parse(layout, initialDate)
-		finalDate, _ := time.Parse(layout, finalDate)
-
-		var maxReservations int
-		hotelRooms := hotelClient.GetHotelById(hotelId).RoomsAvailable
-
-		for date := initialDate; date.Before(finalDate); date = date.AddDate(0, 0, 1) {
-			reservations := reservationClient.GetReservationsByHotelAndDate(hotelId, date)
-			if reservations > maxReservations {
-				maxReservations = reservations
-			}
-		}
-
-		roomsAvailable := hotelRooms - maxReservations
-
-		// Agregar la información del hotel y las habitaciones disponibles a la respuesta
-		roomInfo := reservations_dto.RoomInfo{
-			Name:           hotel.Name,
-			RoomsAvailable: roomsAvailable,
-			Id:             hotel.Id,
-		}
-		response.Rooms = append(response.Rooms, roomInfo)
-	}
-
-	return response, nil
-}
-
-func (s *reservationService) GetFilteredReservations(hotelID int, userID int, startDate string, endDate string) (reservations_dto.ReservationsDetailDto, error) {
-	// Realiza la lógica para filtrar las reservas según los parámetros proporcionados
-	newLayout := "2006-01-02"
-	// Crea una variable para almacenar las reservas filtradas
-	var filteredReservations = make([]reservations_dto.ReservationDetailDto, 0)
-
-	// Obtén todas las reservas existentes desde tu fuente de datos (por ejemplo, una base de datos)
-	allReservations := reservationClient.GetReservations()
-
-	// Aplica los filtros si se proporcionan
-	for _, reservation := range allReservations {
-		// Verifica si el ID del hotel coincide con el parámetro proporcionado
-		if hotelID != 0 && reservation.HotelId != hotelID {
-			continue
-		}
-
-		// Verifica si el ID del usuario coincide con el parámetro proporcionado
-		if userID != 0 && reservation.UserId != userID {
-			continue
-		}
-
-		// Verifica si la fecha de inicio coincide con el parámetro proporcionado
-		if startDate != "" {
-			startTime, err := time.Parse(newLayout, startDate)
-			if err != nil {
-				log.Error(err)
-				return reservations_dto.ReservationsDetailDto{}, err
-			}
-
-			if reservation.InitialDate.Before(startTime) {
-				continue
-			}
-		}
-
-		// Verifica si la fecha de finalización coincide con el parámetro proporcionado
-		if endDate != "" {
-			log.Error(endDate)
-			endTime, err := time.Parse(newLayout, endDate)
-			if err != nil {
-				log.Error(err)
-				return reservations_dto.ReservationsDetailDto{}, err
-			}
-
-			if reservation.FinalDate.After(endTime) {
-				continue
-			}
-		}
-
-		// Si la reserva pasa todos los filtros, agrégala a las reservas filtradas
-		var reservationDetailDto reservations_dto.ReservationDetailDto
-		reservationDetailDto.Id = reservation.Id
-		reservationDetailDto.UserName = reservation.User.Name
-		reservationDetailDto.UserLastName = reservation.User.LastName
-		reservationDetailDto.UserDni = reservation.User.Dni
-		reservationDetailDto.UserEmail = reservation.User.Email
-		reservationDetailDto.HotelName = reservation.Hotel.Name
-		reservationDetailDto.HotelDescription = reservation.Hotel.Description
-		reservationDetailDto.InitialDate = reservation.InitialDate.Format(layout)
-		reservationDetailDto.FinalDate = reservation.FinalDate.Format(layout)
-		filteredReservations = append(filteredReservations, reservationDetailDto)
-	}
-
-	// Crea una instancia de ReservationsDetailDto y asigna las reservas filtradas
-	reservationsDto := reservations_dto.ReservationsDetailDto{
-		Reservations: filteredReservations,
-	}
-
-	return reservationsDto, nil
-}
-
-func (s *reservationService) RoomsAvailableHotel(reservationDto reservations_dto.ReservationCreateDto) (reservations_dto.RoomsAvailable, e.ApiError) {
-	hotelId := reservationDto.HotelId
-	initialDate, _ := time.Parse(layout, reservationDto.InitialDate)
-	finalDate, _ := time.Parse(layout, reservationDto.FinalDate)
-
-	var maxReservations int
-	roomsAvailable := reservations_dto.RoomsAvailable{}
-	hotelRooms := hotelClient.GetHotelById(hotelId).RoomsAvailable
-
-	for date := initialDate; date.Before(finalDate); date = date.AddDate(0, 0, 1) {
-		reservations := reservationClient.GetReservationsByHotelAndDate(hotelId, date)
-		if reservations > maxReservations {
-			maxReservations = reservations
-		}
-	}
-
-	roomsAvailable.Rooms = hotelRooms - maxReservations
-
-	return roomsAvailable, nil
+func (testReservations TestReservations) GetReservationsByHotelAndDates(idHotel int, initialDate time.Time, finalDate time.Time) int {
+	return 0
 }

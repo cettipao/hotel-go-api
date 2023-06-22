@@ -1,6 +1,7 @@
 package userController
 
 import (
+	userClient "mvc-go/clients/user"
 	"mvc-go/controllers"
 	"mvc-go/dto/users_dto"
 	service "mvc-go/services"
@@ -182,6 +183,7 @@ func UserLogin(c *gin.Context) {
 	}
 
 	var loginResponse users_dto.UserLoginResponseDto
+	userClient.MyClient = userClient.ProductionClient{}
 	loginResponse, er := service.UserService.UserLogin(userDto)
 	// Error del Login
 	if er != nil {

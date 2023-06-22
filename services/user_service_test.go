@@ -2,86 +2,66 @@ package services
 
 import (
 	"github.com/stretchr/testify/assert"
-	hotelClient "mvc-go/clients/hotel"
+	userClient "mvc-go/clients/user"
+	"mvc-go/dto/users_dto"
 	"mvc-go/model"
 	"testing"
 )
 
-type TestHotels struct {
+type TestUsers struct {
 }
 
-func (testHotels TestHotels) GetHotels() model.Hotels {
-	hotel1 := model.Hotel{
-		Id:             1,
-		Name:           "Hotel A",
-		RoomsAvailable: 10,
-		Description:    "This is a beautiful hotel with great amenities.",
-		Amenities: []*model.Amenitie{
-			{Id: 1, Name: "Swimming Pool"},
-			{Id: 2, Name: "Gym"},
-		},
-		Images: []*model.Image{
-			{ID: 1, Path: "https://example.com/hotel1_image1.jpg"},
-			{ID: 2, Path: "https://example.com/hotel1_image2.jpg"},
-		},
+func (testUsers TestUsers) GetUserByEmail(email string) model.User {
+	user1 := model.User{
+		Id:       1,
+		Name:     "John",
+		LastName: "Doe",
+		Dni:      "123456789",
+		Email:    email,
+		Password: "$2a$14$0fuoXVH9zAPfWb8WtYQ.7.jDyF/lgaEaHdmTgXVAVs/s874cqWOKq",
+		Admin:    0,
 	}
-
-	hotel2 := model.Hotel{
-		Id:             2,
-		Name:           "Hotel B",
-		RoomsAvailable: 10,
-		Description:    "Experience luxury at its finest in this modern hotel.",
-		Amenities: []*model.Amenitie{
-			{Id: 3, Name: "Spa"},
-			{Id: 4, Name: "Restaurant"},
-		},
-		Images: []*model.Image{
-			{ID: 3, Path: "https://example.com/hotel2_image1.jpg"},
-			{ID: 4, Path: "https://example.com/hotel2_image2.jpg"},
-		},
-	}
-
-	hotels := model.Hotels{hotel1, hotel2}
-	return hotels
+	return user1
 }
 
-func (testHotels TestHotels) GetHotelById(id int) model.Hotel {
-	hotel := model.Hotel{
-		Id:             id,
-		Name:           "Hotel A",
-		RoomsAvailable: 10,
-		Description:    "This is a beautiful hotel with great amenities.",
-		Amenities: []*model.Amenitie{
-			{Id: 1, Name: "Swimming Pool"},
-			{Id: 2, Name: "Gym"},
-		},
-		Images: []*model.Image{
-			{ID: 1, Path: "https://example.com/hotel1_image1.jpg"},
-			{ID: 2, Path: "https://example.com/hotel1_image2.jpg"},
-		},
-	}
-	return hotel
-}
-
-func TestGetHotels(t *testing.T) {
+func TestUserLogin(t *testing.T) {
 	//prepare
-	hotelClient.MyClient = TestHotels{}
+	userClient.MyClient = TestUsers{}
+	userLogin := users_dto.UserLoginDto{
+		Email:    "john.doe@example.com",
+		Password: "user",
+	}
 
 	//act
-	hotels, _ := HotelService.GetHotels()
+	response, _ := UserService.UserLogin(userLogin)
 
 	//assert
-	assert.Equal(t, hotels.Hotels[0].Name, "Hotel A")
-	assert.Equal(t, hotels.Hotels[0].Id, 1)
+	assert.NotEmpty(t, response.Token)
 }
 
-func TestGetHotelById(t *testing.T) {
+func TestUserLoginFailed(t *testing.T) {
 	//prepare
-	hotelClient.MyClient = TestHotels{}
+	userClient.MyClient = TestUsers{}
+	userLogin := users_dto.UserLoginDto{
+		Email:    "john.doe@example.com",
+		Password: "x",
+	}
 
 	//act
-	hotel, _ := HotelService.GetHotelById(3)
+	response, err := UserService.UserLogin(userLogin)
 
 	//assert
-	assert.Equal(t, hotel.Id, 3)
+	assert.Equal(t, response.Token, "")
+	assert.Equal(t, err.Status(), 401)
+}
+
+func TestEmailTaken(t *testing.T) {
+	//prepare
+	userClient.MyClient = TestUsers{}
+
+	//act
+	response := UserService.IsEmailTaken("user@user.com")
+
+	//assert
+	assert.Equal(t, response, true)
 }

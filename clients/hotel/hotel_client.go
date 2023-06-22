@@ -10,7 +10,18 @@ import (
 
 var Db *gorm.DB
 
-func GetHotelById(id int) model.Hotel {
+type HotelClientInterface interface {
+	GetHotels() model.Hotels
+	GetHotelById(id int) model.Hotel
+}
+
+var (
+	MyClient HotelClientInterface
+)
+
+type ProductionClient struct{}
+
+func (HotelClientInterface ProductionClient) GetHotelById(id int) model.Hotel {
 	var hotel model.Hotel
 
 	//Db.Where("id = ?", id).Preload("Address").Preload("Telephones").First(&users_dto)
@@ -20,7 +31,7 @@ func GetHotelById(id int) model.Hotel {
 	return hotel
 }
 
-func GetHotels() model.Hotels {
+func (HotelClientInterface ProductionClient) GetHotels() model.Hotels {
 	var hotels model.Hotels
 	//Db.Preload("Address").Find(&users)
 	Db.Preload("Amenities").Preload("Images").Find(&hotels)
@@ -50,25 +61,6 @@ func DeleteHotelById(id int) e.ApiError {
 			return e.NewBadRequestApiError("Hotel not found")
 		}
 		return e.NewBadRequestApiError("Failed to delete hotel")
-	}
-
-	// Obtiene las imágenes asociadas al hotel antes de eliminarlo
-	var images []model.Image
-	if err := Db.Model(&hotel).Association("Images").Find(&images).Error; err != nil {
-		// Maneja el error de búsqueda de imágenes según sea necesario
-		return e.NewBadRequestApiError("Failed to delete hotel images")
-	}
-
-	// Elimina todas las relaciones de hotel_amenitie en las que el hotel sea la entidad principal
-	if err := Db.Model(&hotel).Association("Amenities").Clear().Error; err != nil {
-		// Maneja el error de eliminación de las relaciones según sea necesario
-		return e.NewBadRequestApiError("Failed to delete hotel amenities")
-	}
-
-	// Elimina las imágenes de la base de datos
-	if err := Db.Delete(&images).Error; err != nil {
-		// Maneja el error de eliminación de imágenes según sea necesario
-		return e.NewBadRequestApiError("Failed to delete hotel images")
 	}
 
 	// Elimina el hotel por su ID
